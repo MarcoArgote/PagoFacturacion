@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Carrito</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f4f4f4; }
+    .container { max-width: 900px; margin: 40px auto; background: #fff; padding: 32px; border-radius: 8px; box-shadow: 0 2px 8px #0001; }
+    h2 { text-align: center; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 24px; }
+    th, td { border: 1px solid #eee; padding: 8px; text-align: left; }
+    th { background: #f8f8f8; }
+    .btn { background: #007bff; color: #fff; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; }
+    .btn:hover { background: #0056b3; }
+    .factura-form { margin-top: 32px; }
+    .factura-form input, .factura-form textarea { width: 100%; padding: 8px; margin: 8px 0; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Carrito de Servicios</h2>
+    <div id="carrito"></div>
+    <div class="factura-form">
+      <h3>Datos para Facturación</h3>
+      <form id="facturaForm">
+        <input type="text" id="nombre" placeholder="Nombre completo" required />
+        <input type="text" id="direccion" placeholder="Dirección" required />
+        <input type="text" id="nit" placeholder="NIT o RFC" required />
+        <textarea id="otros" placeholder="Otros datos"></textarea>
+        <h4>Método de Pago</h4>
+        <select id="metodoPago" required>
+          <option value="">Seleccione...</option>
+          <option value="tarjeta">Tarjeta de Débito</option>
+          <option value="qr">QR</option>
+          <option value="efectivo">Efectivo</option>
+        </select>
+        <div id="pagoExtra"></div>
+        <button type="submit" class="btn">Pagar y Generar Factura</button>
+      </form>
+      <div id="facturaMsg"></div>
+    </div>
+  </div>
+  <script>
+    async function cargarCarrito() {
+      const token = localStorage.getItem('token');
+      if (!token) { window.location.href = 'index.html'; return; }
+      const res = await fetch('http://localhost:3000/api/carrito', {
+        headers: { 'Authorization': 'Bearer ' + token }
+      });
+      const data = await res.json();
+      if (!res.ok) { document.getElementById('carrito').innerText = 'Error al cargar carrito'; return; }
+      let html = '<table><tr><th>Servicio</th><th>Cantidad</th><th>Precio</th><th>Total</th></tr>';
+      let total = 0;
+      data.forEach(item => {
+        html += `<tr><td>${item.nombre}</td><td>${item.cantidad}</td><td>$${item.precio}</td><td>$${(item.precio * item.cantidad).toFixed(2)}</td></tr>`;
+        total += item.precio * item.cantidad;
+      });
+      html += `<tr><th colspan='3'>Total</th><th>$${total.toFixed(2)}</th></tr></table>`;
+      document.getElementById('carrito').innerHTML = html;
+    }
+
+    // Cargar datos de factura previos si existen
+    function cargarDatosFacturaPrevios() {
+      const datos = JSON.parse(localStorage.getItem('datosFactura') || '{}');
+      if (datos.nombre) document.getElementById('nombre').value = datos.nombre;
+      if (datos.direccion) document.getElementById('direccion').value = datos.direccion;
+      if (datos.nit) document.getElementById('nit').value = datos.nit;
+      if (datos.otros) document.getElementById('otros').value = datos.otros;
+    }
+
+    document.getElementById('metodoPago').onchange = function() {
+      const metodo = this.value;
+      const pagoExtra = document.getElementById('pagoExtra');
+      if (metodo === 'tarjeta') {
+        pagoExtra.innerHTML = '<input type="text" id="tarjeta" placeholder="Número de tarjeta" maxlength="16" required />';
+      } else if (metodo === 'qr') {
+        pagoExtra.innerHTML = '<img src="https://api.qrserver.com/v1/create-qr-code/?data=PagoLaboratorio&size=120x120" alt="QR de pago" /><br><small>Escanee el código QR para pagar</small>';
+      } else {
+        pagoExtra.innerHTML = '';
+      }
+    };
+    document.getElementById('facturaForm').onsubmit = async function(e) {
+      e.preventDefault();
+      const token = localStorage.getItem('token');
+      const datos = {
+        nombre: document.getElementById('nombre').value,
+        direccion: document.getElementById('direccion').value,
+        nit: document.getElementById('nit').value,
+        otros: document.getElementById('otros').value
+      };
+      // Guardar datos en localStorage para futuros pedidos
+      localStorage.setItem('datosFactura', JSON.stringify(datos));
+      const metodoPago = document.getElementById('metodoPago').value;
+      let pagoValido = false;
+      if (metodoPago === 'tarjeta') {
+        const tarjeta = document.getElementById('tarjeta').value;
+        pagoValido = tarjeta.length === 16 && !isNaN(Number(tarjeta));
+      } else if (metodoPago === 'qr') {
+        pagoValido = true; // Simulación: QR siempre válido
+      } else if (metodoPago === 'efectivo') {
+        pagoValido = true;
+      }
+      if (!pagoValido) {
+        document.getElementById('facturaMsg').innerText = 'Datos de pago inválidos.';
+        return;
+      }
+      const res = await fetch('http://localhost:3000/api/facturar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify({ datos, metodoPago })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        document.getElementById('facturaMsg').innerHTML = 'Pago realizado y factura generada.<br><a href="factura.php?id='+data.facturaId+'" target="_blank" class="btn">Descargar Factura PDF</a> <a href="factura.php?id='+data.facturaId+'&detalles=1" target="_blank" class="btn">Ver Detalles</a>';
+      } else {
+        document.getElementById('facturaMsg').innerText = data.error || 'Error al generar factura';
+      }
+    };
+    // Guardar datos de factura en localStorage si el usuario los edita manualmente
+    ['nombre','direccion','nit','otros'].forEach(id => {
+      document.getElementById(id).addEventListener('input', function() {
+        const datos = {
+          nombre: document.getElementById('nombre').value,
+          direccion: document.getElementById('direccion').value,
+          nit: document.getElementById('nit').value,
+          otros: document.getElementById('otros').value
+        };
+        localStorage.setItem('datosFactura', JSON.stringify(datos));
+      });
+    });
+    cargarCarrito();
+    cargarDatosFacturaPrevios();
+  </script>
+</body>
+</html>

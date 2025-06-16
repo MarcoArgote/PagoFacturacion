@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Servicios</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f4f4f4; }
+    .container { max-width: 900px; margin: 40px auto; background: #fff; padding: 32px; border-radius: 8px; box-shadow: 0 2px 8px #0001; }
+    h2 { text-align: center; }
+    .servicio { border-bottom: 1px solid #eee; padding: 16px 0; display: flex; justify-content: space-between; align-items: center; }
+    .servicio:last-child { border-bottom: none; }
+    .carrito-btn { background: #007bff; color: #fff; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; }
+    .carrito-btn:hover { background: #0056b3; }
+    .carrito-link { float: right; margin-top: -40px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Servicios Disponibles</h2>
+    <a href="carrito.html" class="carrito-link">Ver Carrito</a>
+    <div id="servicios"></div>
+  </div>
+  <script>
+    async function cargarServicios() {
+      const res = await fetch('http://localhost:3000/api/servicios');
+      const servicios = await res.json();
+      const cont = document.getElementById('servicios');
+      cont.innerHTML = '';
+      servicios.forEach(s => {
+        const div = document.createElement('div');
+        div.className = 'servicio';
+        div.innerHTML = `<div><strong>${s.nombre}</strong><br>${s.descripcion}<br><b>$${s.precio}</b></div>
+          <button class='carrito-btn' onclick='agregarAlCarrito(${s.id})'>Agregar al carrito</button>`;
+        cont.appendChild(div);
+      });
+    }
+    async function agregarAlCarrito(servicioId) {
+      const token = localStorage.getItem('token');
+      if (!token) { alert('Debes iniciar sesión'); return; }
+      const res = await fetch('http://localhost:3000/api/carrito/agregar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify({ servicioId })
+      });
+      if (res.ok) {
+        alert('Servicio agregado al carrito');
+      } else {
+        alert('Error al agregar al carrito');
+      }
+    }
+    cargarServicios();
+  </script>
+</body>
+</html>
