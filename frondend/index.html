@@ -5,33 +5,178 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Login - Servicios</title>
   <style>
-    body { font-family: Arial, sans-serif; background: #f4f4f4; }
-    .login-container { max-width: 400px; margin: 80px auto; background: #fff; padding: 32px; border-radius: 8px; box-shadow: 0 2px 8px #0001; }
-    h2 { text-align: center; }
-    input, button { width: 100%; padding: 10px; margin: 8px 0; }
-    .error { color: red; text-align: center; }
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: #181c25;
+      min-height: 100vh;
+      margin: 0;
+      overflow: hidden;
+    }
+    .background {
+      position: fixed;
+      top: 0; left: 0; width: 100vw; height: 100vh;
+      z-index: 0;
+      pointer-events: none;
+    }
+    .login-container {
+      max-width: 400px;
+      margin: 80px auto;
+      background: rgba(255,255,255,0.95);
+      padding: 40px 32px 32px 32px;
+      border-radius: 18px;
+      box-shadow: 0 8px 32px #0003, 0 1.5px 8px #0001;
+      position: relative;
+      z-index: 1;
+      backdrop-filter: blur(2px);
+    }
+    h2 {
+      text-align: center;
+      color: #222;
+      margin-bottom: 18px;
+    }
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    label {
+      font-size: 0.98em;
+      color: #444;
+      margin-left: 4px;
+      margin-bottom: 2px;
+      font-weight: 500;
+      letter-spacing: 0.01em;
+    }
+    input[type="text"], input[type="email"], input[type="password"] {
+      padding: 12px 14px;
+      border-radius: 8px;
+      border: 1.5px solid #d1d5db;
+      font-size: 1rem;
+      background: #f7fafd;
+      transition: border 0.2s, box-shadow 0.2s;
+      box-shadow: 0 1px 2px #0001;
+    }
+    input[type="text"]:focus, input[type="email"]:focus, input[type="password"]:focus {
+      border: 1.5px solid #007bff;
+      outline: none;
+      background: #fff;
+      box-shadow: 0 2px 8px #007bff22;
+    }
+    button {
+      background: linear-gradient(90deg, #007bff 60%, #00c6ff 100%);
+      color: #fff;
+      border: none;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 2px 8px #007bff33;
+      border-radius: 8px;
+      font-size: 1.08em;
+      padding: 12px 0;
+      margin-top: 8px;
+      transition: background 0.2s, box-shadow 0.2s;
+    }
+    button:hover {
+      background: linear-gradient(90deg, #0056b3 60%, #0099cc 100%);
+      box-shadow: 0 4px 16px #007bff44;
+    }
+    .error {
+      color: #e74c3c;
+      text-align: center;
+      font-size: 0.95em;
+      margin-top: 0;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #e0e0e0;
+      margin: 30px 0 20px 0;
+    }
+    a { text-decoration: none; }
+    @media (max-width: 500px) {
+      .login-container { max-width: 98vw; padding: 24px 6vw; }
+    }
   </style>
 </head>
 <body>
-  <div class="login-container">
+  <div class="background"><canvas id="bgCanvas"></canvas></div>
+  <div class="login-container" id="loginBox">
     <h2>Iniciar Sesión</h2>
     <form id="loginForm">
-      <input type="email" id="email" placeholder="Correo electrónico" required />
-      <input type="password" id="password" placeholder="Contraseña" required />
+      <div class="input-group">
+        <label for="email">Correo electrónico</label>
+        <input type="email" id="email" placeholder="Correo electrónico" required />
+      </div>
+      <div class="input-group">
+        <label for="password">Contraseña</label>
+        <input type="password" id="password" placeholder="Contraseña" required />
+      </div>
       <button type="submit">Entrar</button>
       <div class="error" id="errorMsg"></div>
     </form>
     <hr>
+    <div style="text-align:center;">
+      ¿No tienes cuenta? <a href="#" id="goRegister" style="color:#007bff;cursor:pointer;">Regístrate</a>
+    </div>
+  </div>
+  <div class="login-container" id="registerBox" style="display:none;">
     <h2>Registrarse</h2>
     <form id="registerForm">
-      <input type="text" id="nombre" placeholder="Nombre" required />
-      <input type="email" id="regEmail" placeholder="Correo electrónico" required />
-      <input type="password" id="regPassword" placeholder="Contraseña" required />
+      <div class="input-group">
+        <label for="nombre">Nombre</label>
+        <input type="text" id="nombre" placeholder="Nombre" required />
+      </div>
+      <div class="input-group">
+        <label for="regEmail">Correo electrónico</label>
+        <input type="email" id="regEmail" placeholder="Correo electrónico" required />
+      </div>
+      <div class="input-group">
+        <label for="regPassword">Contraseña</label>
+        <input type="password" id="regPassword" placeholder="Contraseña" required />
+      </div>
       <button type="submit">Registrarse</button>
       <div class="error" id="regErrorMsg"></div>
     </form>
+    <hr>
+    <div style="text-align:center;">
+      ¿Ya tienes cuenta? <a href="#" id="goLogin" style="color:#007bff;cursor:pointer;">Inicia sesión</a>
+    </div>
   </div>
   <script>
+    // Fondo animado que sigue al cursor
+    const canvas = document.getElementById('bgCanvas');
+    const ctx = canvas.getContext('2d');
+    let w = window.innerWidth, h = window.innerHeight;
+    canvas.width = w; canvas.height = h;
+    let mouse = {x: w/2, y: h/2};
+    window.onresize = () => { w = window.innerWidth; h = window.innerHeight; canvas.width = w; canvas.height = h; };
+    document.onmousemove = e => { mouse.x = e.clientX; mouse.y = e.clientY; };
+    function drawBg() {
+      ctx.clearRect(0,0,w,h);
+      for(let i=0;i<18;i++){
+        let angle = (i/18)*2*Math.PI;
+        let r = 120 + 40*Math.sin(Date.now()/900 + i);
+        let x = mouse.x + Math.cos(angle)*r;
+        let y = mouse.y + Math.sin(angle)*r;
+        ctx.beginPath();
+        ctx.arc(x, y, 18, 0, 2*Math.PI);
+        ctx.fillStyle = `rgba(${100+100*Math.sin(angle)},${180+60*Math.cos(angle)},255,0.13)`;
+        ctx.fill();
+      }
+      requestAnimationFrame(drawBg);
+    }
+    drawBg();
+    document.getElementById('goRegister').onclick = function() {
+      document.getElementById('loginBox').style.display = 'none';
+      document.getElementById('registerBox').style.display = 'block';
+    };
+    document.getElementById('goLogin').onclick = function() {
+      document.getElementById('registerBox').style.display = 'none';
+      document.getElementById('loginBox').style.display = 'block';
+    };
     document.getElementById('loginForm').onsubmit = async function(e) {
       e.preventDefault();
       const email = document.getElementById('email').value;
