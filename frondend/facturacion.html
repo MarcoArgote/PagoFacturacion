@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Facturación</title>
+  <link href="https://fonts.googleapis.com/css?family=Montserrat:400,700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Montserrat', Arial, sans-serif;
+      background: linear-gradient(120deg, #e0eafc 0%, #cfdef3 100%);
+      margin: 0;
+      min-height: 100vh;
+    }
+    .navbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #1a237e;
+      color: #fff;
+      padding: 1rem 2rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+    }
+    .navbar .logo {
+      font-size: 1.5rem;
+      font-weight: 700;
+      letter-spacing: 2px;
+    }
+    .navbar .nav-links {
+      display: flex;
+      gap: 1.5rem;
+      align-items: center;
+    }
+    .navbar a, .navbar button {
+      color: #fff;
+      text-decoration: none;
+      background: none;
+      border: none;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: color 0.2s;
+    }
+    .navbar a:hover, .navbar button:hover {
+      color: #90caf9;
+    }
+    .container {
+      max-width: 500px;
+      margin: 48px auto 0 auto;
+      background: #fff;
+      padding: 40px 32px 32px 32px;
+      border-radius: 18px;
+      box-shadow: 0 8px 32px #0002, 0 1.5px 8px #0001;
+    }
+    h2 {
+      text-align: center;
+      color: #1a237e;
+      margin-bottom: 24px;
+    }
+    .factura-form input, .factura-form textarea, .factura-form select {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      border-radius: 8px;
+      border: 1px solid #bdbdbd;
+      font-size: 1rem;
+      background: #f5f7fa;
+      transition: border 0.2s;
+    }
+    .factura-form input:focus, .factura-form textarea:focus, .factura-form select:focus {
+      border: 1.5px solid #1a237e;
+      outline: none;
+    }
+    .btn {
+      background: #1a237e;
+      color: #fff;
+      border-radius: 8px;
+      padding: 12px 28px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      box-shadow: 0 2px 8px #0001;
+      transition: background 0.2s, color 0.2s;
+      border: none;
+      text-decoration: none;
+      display: inline-block;
+      margin-top: 18px;
+      width: 100%;
+    }
+    .btn:hover {
+      background: #3949ab;
+      color: #fff;
+    }
+    #facturaMsg {
+      margin-top: 18px;
+      text-align: center;
+      color: #388e3c;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="logo">LabSys</div>
+    <div class="nav-links">
+      <a href="servicios.html">Servicios</a>
+      <a href="carrito.html">Carrito</a>
+      <button id="logoutBtn" style="display:none;">Logout</button>
+    </div>
+  </nav>
+  <div class="container">
+    <h2>Facturación</h2>
+    <div class="factura-form">
+      <form id="facturaForm">
+        <input type="text" id="nombre" placeholder="Nombre completo" required />
+        <input type="text" id="direccion" placeholder="Dirección" required />
+        <input type="text" id="nit" placeholder="NIT o RFC" required />
+        <textarea id="otros" placeholder="Otros datos"></textarea>
+        <h4>Método de Pago</h4>
+        <select id="metodoPago" required>
+          <option value="">Seleccione...</option>
+          <option value="tarjeta">Tarjeta de Débito</option>
+          <option value="qr">QR</option>
+          <option value="efectivo">Efectivo</option>
+        </select>
+        <div id="pagoExtra"></div>
+        <button type="submit" class="btn">Pagar y Generar Factura</button>
+      </form>
+      <div id="facturaMsg"></div>
+    </div>
+  </div>
+  <script>
+    // Navbar logout
+    const isLoggedIn = localStorage.getItem('token') !== null;
+    document.getElementById('logoutBtn').style.display = isLoggedIn ? 'inline-block' : 'none';
+    document.getElementById('logoutBtn').onclick = function() {
+      localStorage.removeItem('token');
+      window.location.href = 'index.html';
+    };
+    // Cargar datos de factura previos si existen
+    function cargarDatosFacturaPrevios() {
+      const datos = JSON.parse(localStorage.getItem('datosFactura') || '{}');
+      if (datos.nombre) document.getElementById('nombre').value = datos.nombre;
+      if (datos.direccion) document.getElementById('direccion').value = datos.direccion;
+      if (datos.nit) document.getElementById('nit').value = datos.nit;
+      if (datos.otros) document.getElementById('otros').value = datos.otros;
+    }
+    document.getElementById('metodoPago').onchange = function() {
+      const metodo = this.value;
+      const pagoExtra = document.getElementById('pagoExtra');
+      if (metodo === 'tarjeta') {
+        pagoExtra.innerHTML = '<input type="text" id="tarjeta" placeholder="Número de tarjeta" maxlength="16" required />';
+      } else if (metodo === 'qr') {
+        pagoExtra.innerHTML = '<img src="https://api.qrserver.com/v1/create-qr-code/?data=PagoLaboratorio&size=120x120" alt="QR de pago" /><br><small>Escanee el código QR para pagar</small>';
+      } else {
+        pagoExtra.innerHTML = '';
+      }
+    };
+    document.getElementById('facturaForm').onsubmit = async function(e) {
+      e.preventDefault();
+      const token = localStorage.getItem('token');
+      const datos = {
+        nombre: document.getElementById('nombre').value,
+        direccion: document.getElementById('direccion').value,
+        nit: document.getElementById('nit').value,
+        otros: document.getElementById('otros').value
+      };
+      localStorage.setItem('datosFactura', JSON.stringify(datos));
+      const metodoPago = document.getElementById('metodoPago').value;
+      let pagoValido = false;
+      if (metodoPago === 'tarjeta') {
+        const tarjeta = document.getElementById('tarjeta').value;
+        pagoValido = tarjeta.length === 16 && !isNaN(Number(tarjeta));
+      } else if (metodoPago === 'qr') {
+        pagoValido = true;
+      } else if (metodoPago === 'efectivo') {
+        pagoValido = true;
+      }
+      if (!pagoValido) {
+        document.getElementById('facturaMsg').innerText = 'Datos de pago inválidos.';
+        return;
+      }
+      const res = await fetch('http://localhost:3000/api/facturar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify({ datos, metodoPago })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        document.getElementById('facturaMsg').innerHTML = `
+          <div class="pago-exito-anim">
+            <div class="checkmark-circle">
+              <div class="background"></div>
+              <div class="checkmark draw"></div>
+            </div>
+            <h3>¡Pago realizado con éxito!</h3>
+            <div class="pago-btns">
+              <a href="factura.php?id=${data.facturaId}" target="_blank" class="btn btn-factura">Descargar Factura PDF</a>
+              <a href="factura.php?id=${data.facturaId}&detalles=1" target="_blank" class="btn btn-detalles">Ver Detalles</a>
+            </div>
+          </div>
+        `;
+      } else {
+        document.getElementById('facturaMsg').innerText = data.error || 'Error al generar factura';
+      }
+    };
+    ['nombre','direccion','nit','otros'].forEach(id => {
+      document.getElementById(id).addEventListener('input', function() {
+        const datos = {
+          nombre: document.getElementById('nombre').value,
+          direccion: document.getElementById('direccion').value,
+          nit: document.getElementById('nit').value,
+          otros: document.getElementById('otros').value
+        };
+        localStorage.setItem('datosFactura', JSON.stringify(datos));
+      });
+    });
+    cargarDatosFacturaPrevios();
+  </script>
+</body>
+</html>

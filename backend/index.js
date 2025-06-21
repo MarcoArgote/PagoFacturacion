@@ -8,13 +8,25 @@ const jwt = require('jsonwebtoken');
 const app = express();
 app.use(express.json());
 app.use(cors());
+app.use((req, res, next) => {
+  res.setHeader('Content-Type', 'application/json; charset=utf-8');
+  next();
+});
 
 const dbConfig = {
   host: 'db',
   user: 'user',
   password: 'userpassword',
   database: 'serviciosdb',
+  charset: 'utf8mb4',
 };
+
+// Forzar encoding utf8mb4 en cada consulta
+async function getConnection() {
+  const conn = await mysql.createConnection(dbConfig);
+  await conn.query("SET NAMES utf8mb4");
+  return conn;
+}
 
 // Registro de usuario
 app.post('/api/register', async (req, res) => {
@@ -51,7 +63,7 @@ app.post('/api/login', async (req, res) => {
 // Obtener servicios
 app.get('/api/servicios', async (req, res) => {
   try {
-    const conn = await mysql.createConnection(dbConfig);
+    const conn = await getConnection();
     const [rows] = await conn.execute('SELECT * FROM servicios');
     await conn.end();
     res.json(rows);
@@ -118,7 +130,6 @@ app.post('/api/facturar', auth, async (req, res) => {
   const datos = req.body.datos;
   const metodoPago = req.body.metodoPago;
   try {
-    // Validación simple de método de pago
     if (!['tarjeta', 'qr', 'efectivo'].includes(metodoPago)) {
       return res.status(400).json({ error: 'Método de pago inválido' });
     }
@@ -126,22 +137,22 @@ app.post('/api/facturar', auth, async (req, res) => {
     let [carritos] = await conn.execute('SELECT * FROM carritos WHERE usuario_id = ? ORDER BY id DESC LIMIT 1', [userId]);
     if (carritos.length === 0) return res.status(400).json({ error: 'Carrito vacío' });
     const carritoId = carritos[0].id;
-    const [items] = await conn.execute(`SELECT servicio_id, cantidad FROM carrito_servicios WHERE carrito_id = ?`, [carritoId]);
+    // Traer todos los datos de los servicios del carrito en una sola consulta
+    const [items] = await conn.execute(`SELECT s.id as servicio_id, s.precio, cs.cantidad FROM carrito_servicios cs JOIN servicios s ON cs.servicio_id = s.id WHERE cs.carrito_id = ?`, [carritoId]);
     if (items.length === 0) return res.status(400).json({ error: 'Carrito vacío' });
     let total = 0;
     for (const item of items) {
-      const [[serv]] = await conn.execute('SELECT precio FROM servicios WHERE id = ?', [item.servicio_id]);
-      total += serv.precio * item.cantidad;
+      if (typeof item.precio === 'undefined') {
+        return res.status(400).json({ error: `Servicio con id ${item.servicio_id} no encontrado` });
+      }
+      total += item.precio * item.cantidad;
     }
-    // Guardar método de pago en datos_cliente
     const datosFactura = { ...datos, metodoPago };
     const [facturaRes] = await conn.execute('INSERT INTO facturas (usuario_id, total, datos_cliente) VALUES (?, ?, ?)', [userId, total, JSON.stringify(datosFactura)]);
     const facturaId = facturaRes.insertId;
     for (const item of items) {
-      const [[serv]] = await conn.execute('SELECT precio FROM servicios WHERE id = ?', [item.servicio_id]);
-      await conn.execute('INSERT INTO factura_servicios (factura_id, servicio_id, cantidad, precio_unitario) VALUES (?, ?, ?, ?)', [facturaId, item.servicio_id, item.cantidad, serv.precio]);
+      await conn.execute('INSERT INTO factura_servicios (factura_id, servicio_id, cantidad, precio_unitario) VALUES (?, ?, ?, ?)', [facturaId, item.servicio_id, item.cantidad, item.precio]);
     }
-    // Vaciar carrito
     await conn.execute('DELETE FROM carrito_servicios WHERE carrito_id = ?', [carritoId]);
     await conn.end();
     res.json({ message: 'Factura generada', facturaId });

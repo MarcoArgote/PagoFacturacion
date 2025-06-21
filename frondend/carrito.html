@@ -4,44 +4,253 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Carrito</title>
+  <link href="https://fonts.googleapis.com/css?family=Montserrat:400,700&display=swap" rel="stylesheet">
   <style>
-    body { font-family: Arial, sans-serif; background: #f4f4f4; }
-    .container { max-width: 900px; margin: 40px auto; background: #fff; padding: 32px; border-radius: 8px; box-shadow: 0 2px 8px #0001; }
-    h2 { text-align: center; }
-    table { width: 100%; border-collapse: collapse; margin-bottom: 24px; }
-    th, td { border: 1px solid #eee; padding: 8px; text-align: left; }
-    th { background: #f8f8f8; }
-    .btn { background: #007bff; color: #fff; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; }
-    .btn:hover { background: #0056b3; }
-    .factura-form { margin-top: 32px; }
-    .factura-form input, .factura-form textarea { width: 100%; padding: 8px; margin: 8px 0; }
+    body {
+      font-family: 'Montserrat', Arial, sans-serif;
+      background: linear-gradient(120deg, #e0eafc 0%, #cfdef3 100%);
+      margin: 0;
+      min-height: 100vh;
+    }
+    .navbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #1a237e;
+      color: #fff;
+      padding: 1rem 2rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+    }
+    .navbar .logo {
+      font-size: 1.5rem;
+      font-weight: 700;
+      letter-spacing: 2px;
+    }
+    .navbar .nav-links {
+      display: flex;
+      gap: 1.5rem;
+      align-items: center;
+    }
+    .navbar a, .navbar button {
+      color: #fff;
+      text-decoration: none;
+      background: none;
+      border: none;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: color 0.2s;
+    }
+    .navbar a:hover, .navbar button:hover {
+      color: #90caf9;
+    }
+    .container {
+      max-width: 950px;
+      margin: 48px auto 0 auto;
+      background: #fff;
+      padding: 40px 32px 32px 32px;
+      border-radius: 18px;
+      box-shadow: 0 8px 32px #0002, 0 1.5px 8px #0001;
+    }
+    h2 {
+      text-align: center;
+      color: #1a237e;
+      margin-bottom: 24px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 24px;
+      background: #f7fafd;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    th, td {
+      border: none;
+      padding: 14px 10px;
+      text-align: left;
+      font-size: 1.05em;
+    }
+    th {
+      background: #e3eafc;
+      color: #1a237e;
+      font-weight: 700;
+    }
+    tr:not(:last-child) td {
+      border-bottom: 1px solid #e0e0e0;
+    }
+    .btn {
+      background: #1a237e;
+      color: #fff;
+      border: none;
+      padding: 10px 24px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 1em;
+      font-weight: 600;
+      margin-top: 10px;
+      transition: background 0.2s;
+    }
+    .btn:hover {
+      background: #3949ab;
+    }
+    .factura-form {
+      margin-top: 32px;
+      background: #f7fafd;
+      border-radius: 12px;
+      padding: 24px 18px 18px 18px;
+      box-shadow: 0 2px 8px #1a237e11;
+    }
+    .factura-form h3 {
+      color: #1a237e;
+      margin-bottom: 18px;
+      text-align: center;
+    }
+    .factura-form input, .factura-form textarea, .factura-form select {
+      width: 100%;
+      padding: 12px 14px;
+      margin: 8px 0;
+      border-radius: 8px;
+      border: 1.5px solid #d1d5db;
+      font-size: 1rem;
+      background: #fff;
+      transition: border 0.2s, box-shadow 0.2s;
+      box-shadow: 0 1px 2px #0001;
+    }
+    .factura-form input:focus, .factura-form textarea:focus, .factura-form select:focus {
+      border: 1.5px solid #007bff;
+      outline: none;
+      background: #f7fafd;
+      box-shadow: 0 2px 8px #007bff22;
+    }
+    #facturaMsg {
+      text-align: center;
+      margin-top: 12px;
+      color: #1a237e;
+      font-weight: 600;
+    }
+    /* Nuevas clases para animación y estilos de éxito */
+    .pago-exito-anim {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-top: 32px;
+      animation: fadeIn 0.7s;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .checkmark-circle {
+      width: 90px;
+      height: 90px;
+      position: relative;
+      margin-bottom: 18px;
+    }
+    .checkmark-circle .background {
+      width: 100%; height: 100%; border-radius: 50%; background: #4caf50; opacity: 0.15; position: absolute; top: 0; left: 0;
+    }
+    .checkmark {
+      width: 90px; height: 90px; border-radius: 50%; border: 4px solid #4caf50; position: absolute; top: 0; left: 0;
+    }
+    .checkmark.draw {
+      animation: checkmark-draw 0.7s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+    }
+    @keyframes checkmark-draw {
+      0% { stroke-dashoffset: 60; }
+      100% { stroke-dashoffset: 0; }
+    }
+    .checkmark:after {
+      content: '';
+      position: absolute;
+      left: 26px;
+      top: 44px;
+      width: 18px;
+      height: 36px;
+      border-right: 5px solid #4caf50;
+      border-bottom: 5px solid #4caf50;
+      transform: rotate(45deg) scale(0);
+      opacity: 0;
+      animation: checkmark-appear 0.5s 0.3s forwards;
+    }
+    @keyframes checkmark-appear {
+      to { transform: rotate(45deg) scale(1); opacity: 1; }
+    }
+    .pago-exito-anim h3 {
+      color: #388e3c;
+      margin: 18px 0 12px 0;
+      font-size: 1.5rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+    }
+    .pago-btns {
+      display: flex;
+      gap: 1.5rem;
+      margin-top: 10px;
+    }
+    .btn.btn-factura, .btn.btn-detalles {
+      background: #1a237e;
+      color: #fff;
+      border-radius: 8px;
+      padding: 12px 28px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      box-shadow: 0 2px 8px #0001;
+      transition: background 0.2s, color 0.2s;
+      border: none;
+      text-decoration: none;
+      display: inline-block;
+    }
+    .btn.btn-factura:hover, .btn.btn-detalles:hover {
+      background: #3949ab;
+      color: #fff;
+    }
+    .btn-eliminar {
+      background: #e53935;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 6px 12px;
+      font-size: 1.1rem;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn-eliminar:hover {
+      background: #b71c1c;
+    }
+    .carrito-total {
+      margin-top: 18px;
+      font-size: 1.2rem;
+      font-weight: 600;
+    }
+    @media (max-width: 700px) {
+      .container { max-width: 99vw; padding: 18px 2vw; }
+      table { font-size: 0.98em; }
+    }
   </style>
 </head>
 <body>
+  <nav class="navbar">
+    <div class="logo">LabServicios</div>
+    <div class="nav-links">
+      <a href="servicios.html">Servicios</a>
+      <a href="carrito.html">Carrito</a>
+      <button id="logoutBtn" style="display:none;">Logout</button>
+    </div>
+  </nav>
   <div class="container">
     <h2>Carrito de Servicios</h2>
     <div id="carrito"></div>
-    <div class="factura-form">
-      <h3>Datos para Facturación</h3>
-      <form id="facturaForm">
-        <input type="text" id="nombre" placeholder="Nombre completo" required />
-        <input type="text" id="direccion" placeholder="Dirección" required />
-        <input type="text" id="nit" placeholder="NIT o RFC" required />
-        <textarea id="otros" placeholder="Otros datos"></textarea>
-        <h4>Método de Pago</h4>
-        <select id="metodoPago" required>
-          <option value="">Seleccione...</option>
-          <option value="tarjeta">Tarjeta de Débito</option>
-          <option value="qr">QR</option>
-          <option value="efectivo">Efectivo</option>
-        </select>
-        <div id="pagoExtra"></div>
-        <button type="submit" class="btn">Pagar y Generar Factura</button>
-      </form>
-      <div id="facturaMsg"></div>
-    </div>
+    <div class="carrito-total"></div>
+    <button id="pagarBtn" class="btn" style="margin-top:32px;width:100%;font-size:1.2rem;">Pagar</button>
   </div>
   <script>
+    // Navbar logout
+    const isLoggedIn = localStorage.getItem('token') !== null;
+    document.getElementById('logoutBtn').style.display = isLoggedIn ? 'inline-block' : 'none';
+    document.getElementById('logoutBtn').onclick = function() {
+      localStorage.removeItem('token');
+      window.location.href = 'index.html';
+    };
     async function cargarCarrito() {
       const token = localStorage.getItem('token');
       if (!token) { window.location.href = 'index.html'; return; }
@@ -50,87 +259,36 @@
       });
       const data = await res.json();
       if (!res.ok) { document.getElementById('carrito').innerText = 'Error al cargar carrito'; return; }
-      let html = '<table><tr><th>Servicio</th><th>Cantidad</th><th>Precio</th><th>Total</th></tr>';
+      let html = '<table><tr><th>Servicio</th><th>Cantidad</th><th>Precio</th><th>Total</th><th>Eliminar</th></tr>';
       let total = 0;
-      data.forEach(item => {
-        html += `<tr><td>${item.nombre}</td><td>${item.cantidad}</td><td>$${item.precio}</td><td>$${(item.precio * item.cantidad).toFixed(2)}</td></tr>`;
+      data.forEach((item, idx) => {
+        html += `<tr><td>${item.nombre}</td><td>${item.cantidad}</td><td>Bs ${Number(item.precio).toFixed(2)}</td><td>Bs ${(item.precio * item.cantidad).toFixed(2)}</td><td><button class='btn-eliminar' data-idx='${idx}'>🗑️</button></td></tr>`;
         total += item.precio * item.cantidad;
       });
-      html += `<tr><th colspan='3'>Total</th><th>$${total.toFixed(2)}</th></tr></table>`;
+      html += `</table>`;
       document.getElementById('carrito').innerHTML = html;
+      document.querySelector('.carrito-total').innerHTML = `<h3 style='text-align:right;margin:18px 0 0 0;'>Total: <span style='color:#1a237e;'>Bs ${total.toFixed(2)}</span></h3>`;
+      // Botones eliminar
+      document.querySelectorAll('.btn-eliminar').forEach(btn => {
+        btn.onclick = async function() {
+          const idx = this.getAttribute('data-idx');
+          await eliminarDelCarrito(idx);
+        };
+      });
     }
-
-    // Cargar datos de factura previos si existen
-    function cargarDatosFacturaPrevios() {
-      const datos = JSON.parse(localStorage.getItem('datosFactura') || '{}');
-      if (datos.nombre) document.getElementById('nombre').value = datos.nombre;
-      if (datos.direccion) document.getElementById('direccion').value = datos.direccion;
-      if (datos.nit) document.getElementById('nit').value = datos.nit;
-      if (datos.otros) document.getElementById('otros').value = datos.otros;
-    }
-
-    document.getElementById('metodoPago').onchange = function() {
-      const metodo = this.value;
-      const pagoExtra = document.getElementById('pagoExtra');
-      if (metodo === 'tarjeta') {
-        pagoExtra.innerHTML = '<input type="text" id="tarjeta" placeholder="Número de tarjeta" maxlength="16" required />';
-      } else if (metodo === 'qr') {
-        pagoExtra.innerHTML = '<img src="https://api.qrserver.com/v1/create-qr-code/?data=PagoLaboratorio&size=120x120" alt="QR de pago" /><br><small>Escanee el código QR para pagar</small>';
-      } else {
-        pagoExtra.innerHTML = '';
-      }
-    };
-    document.getElementById('facturaForm').onsubmit = async function(e) {
-      e.preventDefault();
+    async function eliminarDelCarrito(idx) {
       const token = localStorage.getItem('token');
-      const datos = {
-        nombre: document.getElementById('nombre').value,
-        direccion: document.getElementById('direccion').value,
-        nit: document.getElementById('nit').value,
-        otros: document.getElementById('otros').value
-      };
-      // Guardar datos en localStorage para futuros pedidos
-      localStorage.setItem('datosFactura', JSON.stringify(datos));
-      const metodoPago = document.getElementById('metodoPago').value;
-      let pagoValido = false;
-      if (metodoPago === 'tarjeta') {
-        const tarjeta = document.getElementById('tarjeta').value;
-        pagoValido = tarjeta.length === 16 && !isNaN(Number(tarjeta));
-      } else if (metodoPago === 'qr') {
-        pagoValido = true; // Simulación: QR siempre válido
-      } else if (metodoPago === 'efectivo') {
-        pagoValido = true;
-      }
-      if (!pagoValido) {
-        document.getElementById('facturaMsg').innerText = 'Datos de pago inválidos.';
-        return;
-      }
-      const res = await fetch('http://localhost:3000/api/facturar', {
+      await fetch('http://localhost:3000/api/carrito/eliminar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-        body: JSON.stringify({ datos, metodoPago })
+        body: JSON.stringify({ idx: Number(idx) })
       });
-      const data = await res.json();
-      if (res.ok) {
-        document.getElementById('facturaMsg').innerHTML = 'Pago realizado y factura generada.<br><a href="factura.php?id='+data.facturaId+'" target="_blank" class="btn">Descargar Factura PDF</a> <a href="factura.php?id='+data.facturaId+'&detalles=1" target="_blank" class="btn">Ver Detalles</a>';
-      } else {
-        document.getElementById('facturaMsg').innerText = data.error || 'Error al generar factura';
-      }
+      cargarCarrito();
+    }
+    document.getElementById('pagarBtn').onclick = function() {
+      window.location.href = 'facturacion.html';
     };
-    // Guardar datos de factura en localStorage si el usuario los edita manualmente
-    ['nombre','direccion','nit','otros'].forEach(id => {
-      document.getElementById(id).addEventListener('input', function() {
-        const datos = {
-          nombre: document.getElementById('nombre').value,
-          direccion: document.getElementById('direccion').value,
-          nit: document.getElementById('nit').value,
-          otros: document.getElementById('otros').value
-        };
-        localStorage.setItem('datosFactura', JSON.stringify(datos));
-      });
-    });
     cargarCarrito();
-    cargarDatosFacturaPrevios();
   </script>
 </body>
 </html>

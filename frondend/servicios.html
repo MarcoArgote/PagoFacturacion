@@ -2,42 +2,177 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
+  <title>Servicios de Laboratorio</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Servicios</title>
+  <link href="https://fonts.googleapis.com/css?family=Montserrat:400,700&display=swap" rel="stylesheet">
   <style>
-    body { font-family: Arial, sans-serif; background: #f4f4f4; }
-    .container { max-width: 900px; margin: 40px auto; background: #fff; padding: 32px; border-radius: 8px; box-shadow: 0 2px 8px #0001; }
-    h2 { text-align: center; }
-    .servicio { border-bottom: 1px solid #eee; padding: 16px 0; display: flex; justify-content: space-between; align-items: center; }
-    .servicio:last-child { border-bottom: none; }
-    .carrito-btn { background: #007bff; color: #fff; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; }
-    .carrito-btn:hover { background: #0056b3; }
-    .carrito-link { float: right; margin-top: -40px; }
+    body {
+      margin: 0;
+      font-family: 'Montserrat', sans-serif;
+      background: linear-gradient(120deg, #e0eafc 0%, #cfdef3 100%);
+      min-height: 100vh;
+    }
+    .navbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #1a237e;
+      color: #fff;
+      padding: 1rem 2rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+    }
+    .navbar .logo {
+      font-size: 1.5rem;
+      font-weight: 700;
+      letter-spacing: 2px;
+    }
+    .navbar .nav-links {
+      display: flex;
+      gap: 1.5rem;
+      align-items: center;
+    }
+    .navbar a, .navbar button {
+      color: #fff;
+      text-decoration: none;
+      background: none;
+      border: none;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: color 0.2s;
+    }
+    .navbar a:hover, .navbar button:hover {
+      color: #90caf9;
+    }
+    .landing-header {
+      text-align: center;
+      margin: 3rem 0 2rem 0;
+    }
+    .landing-header h1 {
+      font-size: 2.5rem;
+      margin-bottom: 0.5rem;
+      color: #1a237e;
+    }
+    .landing-header p {
+      color: #3949ab;
+      font-size: 1.2rem;
+      margin: 0 auto;
+      max-width: 600px;
+    }
+    .servicios-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 2rem;
+      padding: 2rem;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    .servicio-card {
+      background: #fff;
+      border-radius: 18px;
+      box-shadow: 0 4px 24px rgba(26,35,126,0.08);
+      padding: 2rem 1.5rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      transition: transform 0.2s, box-shadow 0.2s;
+      position: relative;
+    }
+    .servicio-card:hover {
+      transform: translateY(-8px) scale(1.03);
+      box-shadow: 0 8px 32px rgba(26,35,126,0.16);
+    }
+    .servicio-icon {
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+      color: #3949ab;
+    }
+    .servicio-title {
+      font-size: 1.3rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      color: #1a237e;
+      text-align: center;
+    }
+    .servicio-desc {
+      color: #616161;
+      font-size: 1rem;
+      margin-bottom: 1.2rem;
+      text-align: center;
+    }
+    .servicio-precio {
+      font-size: 1.1rem;
+      color: #3949ab;
+      font-weight: 700;
+      margin-bottom: 1rem;
+    }
+    .servicio-btn {
+      background: #1a237e;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 0.7rem 1.5rem;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .servicio-btn:hover {
+      background: #3949ab;
+    }
+    @media (max-width: 600px) {
+      .landing-header h1 { font-size: 1.5rem; }
+      .servicios-grid { padding: 1rem; }
+      .servicio-card { padding: 1.2rem 0.7rem; }
+    }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h2>Servicios Disponibles</h2>
-    <a href="carrito.html" class="carrito-link">Ver Carrito</a>
-    <div id="servicios"></div>
-  </div>
+  <nav class="navbar">
+    <div class="logo">LabServicios</div>
+    <div class="nav-links">
+      <a href="servicios.html">Servicios</a>
+      <a href="carrito.html">Carrito</a>
+      <button id="logoutBtn" style="display:none;">Logout</button>
+    </div>
+  </nav>
+  <section class="landing-header">
+    <h1>Servicios de Laboratorio Clínico</h1>
+    <p>Elige entre nuestros exámenes de laboratorio profesionales y recibe resultados confiables. ¡Agrega los servicios que necesitas a tu carrito y factura en línea!</p>
+  </section>
+  <section class="servicios-grid" id="serviciosGrid">
+    <!-- Aquí se insertarán los servicios dinámicamente -->
+  </section>
   <script>
-    async function cargarServicios() {
-      const res = await fetch('http://localhost:3000/api/servicios');
-      const servicios = await res.json();
-      const cont = document.getElementById('servicios');
-      cont.innerHTML = '';
-      servicios.forEach(s => {
-        const div = document.createElement('div');
-        div.className = 'servicio';
-        div.innerHTML = `<div><strong>${s.nombre}</strong><br>${s.descripcion}<br><b>$${s.precio}</b></div>
-          <button class='carrito-btn' onclick='agregarAlCarrito(${s.id})'>Agregar al carrito</button>`;
-        cont.appendChild(div);
+    // Mostrar logout si hay sesión
+    const isLoggedIn = localStorage.getItem('token') !== null;
+    document.getElementById('logoutBtn').style.display = isLoggedIn ? 'inline-block' : 'none';
+    document.getElementById('logoutBtn').onclick = function() {
+      localStorage.removeItem('token');
+      window.location.href = 'index.html';
+    };
+    // Cargar servicios desde backend
+    fetch('http://localhost:3000/api/servicios')
+      .then(res => res.json())
+      .then(servicios => {
+        const grid = document.getElementById('serviciosGrid');
+        grid.innerHTML = '';
+        const icons = ["🩸","🧪","💉","🧬","🦠","🧫","🧻","🧴","🧯","🧲"];
+        servicios.forEach((s, idx) => {
+          const card = document.createElement('div');
+          card.className = 'servicio-card';
+          card.innerHTML = `
+            <div class="servicio-icon">${icons[idx%icons.length]}</div>
+            <div class="servicio-title">${s.nombre}</div>
+            <div class="servicio-desc">${s.descripcion}</div>
+            <div class="servicio-precio">Bs ${Number(s.precio).toFixed(2)} </div>
+            <button class="servicio-btn" onclick="agregarAlCarrito(${s.id})">Agregar al carrito</button>
+          `;
+          grid.appendChild(card);
+        });
       });
-    }
-    async function agregarAlCarrito(servicioId) {
+    window.agregarAlCarrito = async function(servicioId) {
       const token = localStorage.getItem('token');
-      if (!token) { alert('Debes iniciar sesión'); return; }
+      if (!token) { alert('Debes iniciar sesión'); window.location.href = 'index.html'; return; }
       const res = await fetch('http://localhost:3000/api/carrito/agregar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
@@ -49,7 +184,6 @@
         alert('Error al agregar al carrito');
       }
     }
-    cargarServicios();
   </script>
 </body>
 </html>
