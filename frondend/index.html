@@ -11,6 +11,10 @@
       min-height: 100vh;
       margin: 0;
       overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
     }
     .background {
       position: fixed;
@@ -19,15 +23,22 @@
       pointer-events: none;
     }
     .login-container {
-      max-width: 400px;
-      margin: 80px auto;
-      background: rgba(255,255,255,0.95);
-      padding: 40px 32px 32px 32px;
+      max-width: 350px;
+      width: 100%;
+      margin: 0 auto;
+      background: rgba(255,255,255,0.97);
+      padding: 32px 24px 24px 24px;
       border-radius: 18px;
       box-shadow: 0 8px 32px #0003, 0 1.5px 8px #0001;
       position: relative;
       z-index: 1;
       backdrop-filter: blur(2px);
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      justify-content: center;
+      min-width: 0;
     }
     h2 {
       text-align: center;
@@ -97,7 +108,7 @@
     }
     a { text-decoration: none; }
     @media (max-width: 500px) {
-      .login-container { max-width: 98vw; padding: 24px 6vw; }
+      .login-container { max-width: 96vw; width: 96vw; padding: 18px 2vw; margin: 0 auto; }
     }
   </style>
 </head>
@@ -126,8 +137,8 @@
     <h2>Registrarse</h2>
     <form id="registerForm">
       <div class="input-group">
-        <label for="nombre">Nombre</label>
-        <input type="text" id="nombre" placeholder="Nombre" required />
+        <label for="regNombre">Nombre</label>
+        <input type="text" id="regNombre" placeholder="Nombre" required />
       </div>
       <div class="input-group">
         <label for="regEmail">Correo electrónico</label>
@@ -146,6 +157,19 @@
     </div>
   </div>
   <script>
+    // Redirigir a servicios.html si el usuario entra a index.html
+    if (window.location.pathname.endsWith('index.html') || window.location.pathname === '/' || window.location.pathname === '/index.html') {
+      // Si viene de 'Iniciar sesión' desde navbar, mostrar login
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('showLogin') === '1') {
+        document.addEventListener('DOMContentLoaded', function() {
+          document.getElementById('loginBox').style.display = 'block';
+          document.getElementById('registerBox').style.display = 'none';
+        });
+      } else {
+        window.location.href = 'servicios.html';
+      }
+    }
     // Fondo animado que sigue al cursor
     const canvas = document.getElementById('bgCanvas');
     const ctx = canvas.getContext('2d');
@@ -172,10 +196,14 @@
     document.getElementById('goRegister').onclick = function() {
       document.getElementById('loginBox').style.display = 'none';
       document.getElementById('registerBox').style.display = 'block';
+      document.getElementById('registerForm').reset();
+      document.getElementById('regErrorMsg').innerText = '';
     };
     document.getElementById('goLogin').onclick = function() {
       document.getElementById('registerBox').style.display = 'none';
       document.getElementById('loginBox').style.display = 'block';
+      document.getElementById('loginForm').reset();
+      document.getElementById('loginErrorMsg').innerText = '';
     };
     document.getElementById('loginForm').onsubmit = async function(e) {
       e.preventDefault();
@@ -196,7 +224,7 @@
     };
     document.getElementById('registerForm').onsubmit = async function(e) {
       e.preventDefault();
-      const nombre = document.getElementById('nombre').value;
+      const nombre = document.getElementById('regNombre').value;
       const email = document.getElementById('regEmail').value;
       const password = document.getElementById('regPassword').value;
       const res = await fetch('http://localhost:3000/api/register', {

@@ -56,19 +56,56 @@
       color: #1a237e;
       margin-bottom: 24px;
     }
+    .factura-form {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+    .factura-form form {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
     .factura-form input, .factura-form textarea, .factura-form select {
       width: 100%;
+      box-sizing: border-box;
       padding: 12px;
-      margin: 10px 0;
+      margin: 8px 0 0 0;
       border-radius: 8px;
       border: 1px solid #bdbdbd;
       font-size: 1rem;
       background: #f5f7fa;
       transition: border 0.2s;
+      min-height: 44px;
+      resize: none;
+    }
+    .factura-form textarea {
+      min-height: 60px;
+      max-height: 120px;
     }
     .factura-form input:focus, .factura-form textarea:focus, .factura-form select:focus {
       border: 1.5px solid #1a237e;
       outline: none;
+    }
+    .factura-form label {
+      margin-top: 12px;
+      font-weight: 600;
+      color: #1a237e;
+      font-size: 1rem;
+    }
+    .factura-form .input-group {
+      display: flex;
+      flex-direction: column;
+      margin-bottom: 0;
+    }
+    .factura-form .input-group:last-child {
+      margin-bottom: 0;
+    }
+    .factura-form .error {
+      color: #e53935;
+      font-size: 0.95rem;
+      margin-top: 2px;
+      margin-bottom: 0;
     }
     .btn {
       background: #1a237e;
@@ -94,6 +131,80 @@
       text-align: center;
       color: #388e3c;
       font-weight: 600;
+    }
+    .loading-anim {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-top: 32px;
+      animation: fadeIn 0.7s;
+    }
+    .lds-ring {
+      display: inline-block;
+      position: relative;
+      width: 64px;
+      height: 64px;
+    }
+    .lds-ring div {
+      box-sizing: border-box;
+      display: block;
+      position: absolute;
+      width: 51px;
+      height: 51px;
+      margin: 6px;
+      border: 6px solid #1a237e;
+      border-radius: 50%;
+      animation: lds-ring 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+      border-color: #1a237e transparent transparent transparent;
+    }
+    .lds-ring div:nth-child(1) { animation-delay: -0.45s; }
+    .lds-ring div:nth-child(2) { animation-delay: -0.3s; }
+    .lds-ring div:nth-child(3) { animation-delay: -0.15s; }
+    @keyframes lds-ring {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .pago-exito-anim {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-top: 32px;
+      animation: fadeIn 0.7s;
+    }
+    .pago-exito-anim-mejorada {
+      align-items: center;
+      margin-top: 32px;
+      animation: fadeIn 0.7s;
+    }
+    .checkmark-svg {
+      width: 90px;
+      height: 90px;
+      display: block;
+      margin: 0 auto 18px auto;
+    }
+    .checkmark-svg .circle {
+      fill: none;
+      stroke: #4caf50;
+      stroke-width: 6;
+      stroke-dasharray: 226;
+      stroke-dashoffset: 226;
+      animation: circle-appear 0.6s ease-out forwards;
+    }
+    .checkmark-svg .check {
+      fill: none;
+      stroke: #4caf50;
+      stroke-width: 6;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-dasharray: 40;
+      stroke-dashoffset: 40;
+      animation: check-appear 0.4s 0.5s cubic-bezier(.6,-0.28,.74,.05) forwards;
+    }
+    @keyframes circle-appear {
+      to { stroke-dashoffset: 0; }
+    }
+    @keyframes check-appear {
+      to { stroke-dashoffset: 0; }
     }
   </style>
 </head>
@@ -156,6 +267,12 @@
     };
     document.getElementById('facturaForm').onsubmit = async function(e) {
       e.preventDefault();
+      document.getElementById('facturaMsg').innerHTML = `
+        <div class="loading-anim">
+          <div class="lds-ring"><div></div><div></div><div></div><div></div></div>
+          <div style="margin-top:12px;color:#1a237e;font-weight:600;">Procesando pago...</div>
+        </div>
+      `;
       const token = localStorage.getItem('token');
       const datos = {
         nombre: document.getElementById('nombre').value,
@@ -175,32 +292,35 @@
         pagoValido = true;
       }
       if (!pagoValido) {
-        document.getElementById('facturaMsg').innerText = 'Datos de pago inválidos.';
+        document.getElementById('facturaMsg').innerHTML = '<div class="factura-form error">Datos de pago inválidos.</div>';
         return;
       }
-      const res = await fetch('http://localhost:3000/api/facturar', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-        body: JSON.stringify({ datos, metodoPago })
-      });
-      const data = await res.json();
-      if (res.ok) {
-        document.getElementById('facturaMsg').innerHTML = `
-          <div class="pago-exito-anim">
-            <div class="checkmark-circle">
-              <div class="background"></div>
-              <div class="checkmark draw"></div>
+      // Simular carga
+      setTimeout(async () => {
+        const res = await fetch('http://localhost:3000/api/facturar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+          body: JSON.stringify({ datos, metodoPago })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          document.getElementById('facturaMsg').innerHTML = `
+            <div class="pago-exito-anim pago-exito-anim-mejorada">
+              <svg class="checkmark-svg" viewBox="0 0 80 80">
+                <circle class="circle" cx="40" cy="40" r="36"/>
+                <polyline class="check" points="24,43 36,55 58,30"/>
+              </svg>
+              <h3>¡Pago realizado con éxito!</h3>
+              <div class="pago-btns">
+                <a href="factura.php?id=${data.facturaId}" target="_blank" class="btn btn-factura">Descargar Factura PDF</a>
+                <a href="factura.php?id=${data.facturaId}&detalles=1" target="_blank" class="btn btn-detalles">Ver Detalles</a>
+              </div>
             </div>
-            <h3>¡Pago realizado con éxito!</h3>
-            <div class="pago-btns">
-              <a href="factura.php?id=${data.facturaId}" target="_blank" class="btn btn-factura">Descargar Factura PDF</a>
-              <a href="factura.php?id=${data.facturaId}&detalles=1" target="_blank" class="btn btn-detalles">Ver Detalles</a>
-            </div>
-          </div>
-        `;
-      } else {
-        document.getElementById('facturaMsg').innerText = data.error || 'Error al generar factura';
-      }
+          `;
+        } else {
+          document.getElementById('facturaMsg').innerHTML = '<div class="factura-form error">' + (data.error || 'Error al generar factura') + '</div>';
+        }
+      }, 1200);
     };
     ['nombre','direccion','nit','otros'].forEach(id => {
       document.getElementById(id).addEventListener('input', function() {

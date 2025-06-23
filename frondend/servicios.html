@@ -119,19 +119,81 @@
     .servicio-btn:hover {
       background: #3949ab;
     }
+    .carrito-fly {
+      position: fixed;
+      z-index: 9999;
+      pointer-events: none;
+      border-radius: 50%;
+      box-shadow: 0 2px 8px #0002;
+      background: #fff;
+      border: 2px solid #1a237e;
+      width: 48px;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      color: #1a237e;
+      animation: flyToCart 0.8s cubic-bezier(.6,-0.28,.74,.05) forwards;
+    }
+    @keyframes flyToCart {
+      0% { opacity: 1; transform: scale(1); }
+      80% { opacity: 1; }
+      100% { opacity: 0; transform: translate(var(--dx,0), var(--dy,0)) scale(0.3); }
+    }
     @media (max-width: 600px) {
       .landing-header h1 { font-size: 1.5rem; }
       .servicios-grid { padding: 1rem; }
       .servicio-card { padding: 1.2rem 0.7rem; }
     }
+    .login-alert-content {
+      background: #fffbe6;
+      color: #b71c1c;
+      border: 2px solid #ffe082;
+      border-radius: 14px;
+      box-shadow: 0 8px 32px #0002;
+      padding: 32px 28px 22px 28px;
+      font-size: 1.15rem;
+      font-weight: 600;
+      text-align: center;
+      position: fixed;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 99999;
+      min-width: 260px;
+      max-width: 90vw;
+      animation: fadeInScale 0.3s;
+    }
+    .login-alert-content button {
+      margin-top: 18px;
+      background: #1a237e;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 24px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .login-alert-content button:hover {
+      background: #3949ab;
+    }
+    @keyframes fadeInScale {
+      from { opacity: 0; transform: translate(-50%, -50%) scale(0.7); }
+      to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    }
   </style>
 </head>
 <body>
   <nav class="navbar">
-    <div class="logo">LabServicios</div>
+    <div class="logo">PENSALA</div>
     <div class="nav-links">
       <a href="servicios.html">Servicios</a>
-      <a href="carrito.html">Carrito</a>
+      <a href="carrito.html" id="carritoNav">Carrito</a>
+      <a href="facturacion.html" id="facturaNav" style="display:none;">Facturación</a>
+      <a href="#" id="loginNav" style="display:none;">Iniciar sesión</a>
       <button id="logoutBtn" style="display:none;">Logout</button>
     </div>
   </nav>
@@ -143,13 +205,56 @@
     <!-- Aquí se insertarán los servicios dinámicamente -->
   </section>
   <script>
-    // Mostrar logout si hay sesión
-    const isLoggedIn = localStorage.getItem('token') !== null;
-    document.getElementById('logoutBtn').style.display = isLoggedIn ? 'inline-block' : 'none';
+    // Navbar login/logout visibility
+    function actualizarNavSesion() {
+      const token = localStorage.getItem('token');
+      const loginNav = document.getElementById('loginNav');
+      const logoutBtn = document.getElementById('logoutBtn');
+      const facturaNav = document.getElementById('facturaNav');
+      if (token) {
+        loginNav.style.display = 'none';
+        logoutBtn.style.display = 'inline-block';
+        facturaNav.style.display = 'inline-block';
+      } else {
+        if (loginNav.style.display !== 'inline-block') {
+          loginNav.style.display = 'inline-block';
+        }
+        logoutBtn.style.display = 'none';
+        facturaNav.style.display = 'none';
+      }
+    }
+    document.getElementById('loginNav').onclick = function(e) {
+      e.preventDefault();
+      window.location.href = 'index.html?showLogin=1';
+    };
     document.getElementById('logoutBtn').onclick = function() {
       localStorage.removeItem('token');
-      window.location.href = 'index.html';
+      actualizarNavSesion();
     };
+    document.getElementById('carritoNav').onclick = function(e) {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        e.preventDefault();
+        // Animación de advertencia centrada con botón cerrar
+        if (!document.getElementById('loginAlert')) {
+          const alertDiv = document.createElement('div');
+          alertDiv.id = 'loginAlert';
+          alertDiv.innerHTML = '<div class="login-alert-content">Debes iniciar sesión para ver el carrito.<br><button id="alertLoginBtn">Iniciar sesión</button> <button id="alertCloseBtn" style="margin-left:12px;background:#bdbdbd;color:#222;">Cerrar</button></div>';
+          document.body.appendChild(alertDiv);
+          document.getElementById('alertLoginBtn').onclick = function() {
+            window.location.href = 'index.html?showLogin=1';
+          };
+          document.getElementById('alertCloseBtn').onclick = function() {
+            alertDiv.remove();
+          };
+          setTimeout(() => {
+            if (alertDiv && document.body.contains(alertDiv)) alertDiv.remove();
+          }, 5000);
+        }
+        return false;
+      }
+    };
+    actualizarNavSesion();
     // Cargar servicios desde backend
     fetch('http://localhost:3000/api/servicios')
       .then(res => res.json())
@@ -172,17 +277,59 @@
       });
     window.agregarAlCarrito = async function(servicioId) {
       const token = localStorage.getItem('token');
-      if (!token) { alert('Debes iniciar sesión'); window.location.href = 'index.html'; return; }
-      const res = await fetch('http://localhost:3000/api/carrito/agregar', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-        body: JSON.stringify({ servicioId })
-      });
-      if (res.ok) {
-        alert('Servicio agregado al carrito');
-      } else {
-        alert('Error al agregar al carrito');
+      if (!token) {
+        // Animación de advertencia centrada reutilizable
+        if (!document.getElementById('loginAlert')) {
+          const alertDiv = document.createElement('div');
+          alertDiv.id = 'loginAlert';
+          alertDiv.innerHTML = '<div class="login-alert-content">Debes iniciar sesión para agregar productos al carrito.<br><button id="alertLoginBtn">Iniciar sesión</button> <button id="alertCloseBtn" style="margin-left:12px;background:#bdbdbd;color:#222;">Cerrar</button></div>';
+          document.body.appendChild(alertDiv);
+          document.getElementById('alertLoginBtn').onclick = function() {
+            window.location.href = 'index.html?showLogin=1';
+          };
+          document.getElementById('alertCloseBtn').onclick = function() {
+            alertDiv.remove();
+          };
+          setTimeout(() => {
+            if (alertDiv && document.body.contains(alertDiv)) alertDiv.remove();
+          }, 5000);
+        }
+        document.getElementById('loginNav').style.display = 'inline-block';
+        return;
       }
+      // Animación: icono vuela al carrito
+      const btn = event.target;
+      const card = btn.closest('.servicio-card');
+      const icon = card.querySelector('.servicio-icon');
+      const iconRect = icon.getBoundingClientRect();
+      const carritoLink = document.querySelector('.nav-links a[href="carrito.html"]');
+      const carritoRect = carritoLink.getBoundingClientRect();
+      const fly = icon.cloneNode(true);
+      fly.classList.add('carrito-fly');
+      document.body.appendChild(fly);
+      fly.style.left = iconRect.left + 'px';
+      fly.style.top = iconRect.top + 'px';
+      // Calcular desplazamiento
+      const dx = carritoRect.left - iconRect.left;
+      const dy = carritoRect.top - iconRect.top;
+      fly.style.setProperty('--dx', dx + 'px');
+      fly.style.setProperty('--dy', dy + 'px');
+      setTimeout(() => { fly.remove(); }, 850);
+      // Esperar un poco para UX
+      setTimeout(async () => {
+        const res = await fetch('http://localhost:3000/api/carrito/agregar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+          body: JSON.stringify({ servicioId })
+        });
+        if (res.ok) {
+          // Opcional: feedback visual en el carrito
+          carritoLink.style.background = '#c8e6c9';
+          setTimeout(()=>{ carritoLink.style.background = ''; }, 400);
+        } else {
+          alert('Error al agregar al carrito');
+        }
+      }, 400);
     }
   </script>
 </body>
