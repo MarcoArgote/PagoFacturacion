@@ -66,7 +66,13 @@ app.get('/api/servicios', async (req, res) => {
     const conn = await getConnection();
     const [rows] = await conn.execute('SELECT * FROM servicios');
     await conn.end();
-    res.json(rows);
+    // Forzar utf8 en cada campo por si acaso
+    const servicios = rows.map(s => ({
+      ...s,
+      nombre: Buffer.from(s.nombre, 'binary').toString('utf8'),
+      descripcion: Buffer.from(s.descripcion || '', 'binary').toString('utf8')
+    }));
+    res.json(servicios);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -116,7 +122,8 @@ app.get('/api/carrito', auth, async (req, res) => {
     let [carritos] = await conn.execute('SELECT * FROM carritos WHERE usuario_id = ? ORDER BY id DESC LIMIT 1', [userId]);
     if (carritos.length === 0) return res.json([]);
     const carritoId = carritos[0].id;
-    const [items] = await conn.execute(`SELECT s.nombre, cs.cantidad, s.precio FROM carrito_servicios cs JOIN servicios s ON cs.servicio_id = s.id WHERE cs.carrito_id = ?`, [carritoId]);
+    // Obtener los servicios del carrito ordenados, incluyendo el id de carrito_servicios
+    const [items] = await conn.execute(`SELECT cs.id, s.nombre, cs.cantidad, s.precio FROM carrito_servicios cs JOIN servicios s ON cs.servicio_id = s.id WHERE cs.carrito_id = ?`, [carritoId]);
     await conn.end();
     res.json(items);
   } catch (err) {
@@ -156,6 +163,43 @@ app.post('/api/facturar', auth, async (req, res) => {
     await conn.execute('DELETE FROM carrito_servicios WHERE carrito_id = ?', [carritoId]);
     await conn.end();
     res.json({ message: 'Factura generada', facturaId });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Eliminar servicio del carrito por id
+app.post('/api/carrito/eliminar', auth, async (req, res) => {
+  const userId = req.user.id;
+  const id = req.body.id;
+  try {
+    const conn = await mysql.createConnection(dbConfig);
+    // Verifica que el id pertenezca a un carrito del usuario
+    let [carritos] = await conn.execute('SELECT * FROM carritos WHERE usuario_id = ? ORDER BY id DESC LIMIT 1', [userId]);
+    if (carritos.length === 0) return res.status(400).json({ error: 'Carrito vacío' });
+    const carritoId = carritos[0].id;
+    // Verifica que el id a eliminar pertenezca al carrito del usuario
+    const [rows] = await conn.execute('SELECT * FROM carrito_servicios WHERE id = ? AND carrito_id = ?', [id, carritoId]);
+    if (rows.length === 0) return res.status(400).json({ error: 'No autorizado' });
+    await conn.execute('DELETE FROM carrito_servicios WHERE id = ?', [id]);
+    await conn.end();
+    res.json({ message: 'Servicio eliminado' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Vaciar todo el carrito
+app.post('/api/carrito/vaciar', auth, async (req, res) => {
+  const userId = req.user.id;
+  try {
+    const conn = await mysql.createConnection(dbConfig);
+    let [carritos] = await conn.execute('SELECT * FROM carritos WHERE usuario_id = ? ORDER BY id DESC LIMIT 1', [userId]);
+    if (carritos.length === 0) return res.status(400).json({ error: 'Carrito vacío' });
+    const carritoId = carritos[0].id;
+    await conn.execute('DELETE FROM carrito_servicios WHERE carrito_id = ?', [carritoId]);
+    await conn.end();
+    res.json({ message: 'Carrito vaciado' });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

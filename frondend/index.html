@@ -138,7 +138,8 @@
     <form id="registerForm">
       <div class="input-group">
         <label for="regNombre">Nombre</label>
-        <input type="text" id="regNombre" placeholder="Nombre" required />
+        <input type="text" id="regNombre" placeholder="Nombre" required autocomplete="off" />
+        <span id="regNombreError" class="error" style="display:none;"></span>
       </div>
       <div class="input-group">
         <label for="regEmail">Correo electrónico</label>
@@ -222,11 +223,27 @@
         document.getElementById('errorMsg').innerText = data.error || 'Error al iniciar sesión';
       }
     };
+    // Validación de nombre en registro
+    function validarNombreRegistro(nombre) {
+      // Debe tener al menos 2 letras reales (no espacios), solo letras y espacios
+      const soloLetrasYEspacios = /^[A-Za-zÁÉÍÓÚáéíóúÑñ ]+$/;
+      const letras = nombre.replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñ]/g, '');
+      return soloLetrasYEspacios.test(nombre) && letras.length >= 2;
+    }
     document.getElementById('registerForm').onsubmit = async function(e) {
       e.preventDefault();
-      const nombre = document.getElementById('regNombre').value;
+      const nombre = document.getElementById('regNombre').value.trim();
       const email = document.getElementById('regEmail').value;
       const password = document.getElementById('regPassword').value;
+      const regNombreError = document.getElementById('regNombreError');
+      if (!validarNombreRegistro(nombre)) {
+        regNombreError.innerText = 'El nombre debe contener solo letras y al menos 2 letras.';
+        regNombreError.style.display = 'block';
+        document.getElementById('regNombre').focus();
+        return;
+      } else {
+        regNombreError.style.display = 'none';
+      }
       const res = await fetch('http://localhost:3000/api/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

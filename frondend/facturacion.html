@@ -210,7 +210,7 @@
 </head>
 <body>
   <nav class="navbar">
-    <div class="logo">LabSys</div>
+    <div class="logo">PENSALA</div>
     <div class="nav-links">
       <a href="servicios.html">Servicios</a>
       <a href="carrito.html">Carrito</a>
@@ -221,9 +221,11 @@
     <h2>Facturación</h2>
     <div class="factura-form">
       <form id="facturaForm">
-        <input type="text" id="nombre" placeholder="Nombre completo" required />
+        <input type="text" id="nombre" placeholder="Nombre completo" required pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ ]{2,}" title="Solo letras y espacios" />
+        <span id="nombreError" class="factura-form error" style="display:none;"></span>
         <input type="text" id="direccion" placeholder="Dirección" required />
-        <input type="text" id="nit" placeholder="NIT o RFC" required />
+        <input type="text" id="nit" placeholder="NIT o RFC" required pattern="[0-9]+" title="Solo números" />
+        <span id="nitError" class="factura-form error" style="display:none;"></span>
         <textarea id="otros" placeholder="Otros datos"></textarea>
         <h4>Método de Pago</h4>
         <select id="metodoPago" required>
@@ -238,6 +240,103 @@
       <div id="facturaMsg"></div>
     </div>
   </div>
+
+  <!-- Modal de pago con tarjeta -->
+  <div id="modalTarjeta" class="modal-tarjeta-bg" style="display:none;">
+    <div class="modal-tarjeta">
+      <h2>Pagar con Tarjeta</h2>
+      <form id="formTarjeta">
+        <div class="input-group">
+          <label>Número de tarjeta</label>
+          <input type="text" id="tarjetaNum" maxlength="19" placeholder="0000 0000 0000 0000" required pattern="\d{4} \d{4} \d{4} \d{4}">
+        </div>
+        <div class="input-group">
+          <label>Nombre en la tarjeta</label>
+          <input type="text" id="tarjetaNombre" maxlength="40" placeholder="Como aparece en la tarjeta" required>
+        </div>
+        <div style="display:flex; gap:10px;">
+          <div class="input-group" style="flex:1;">
+            <label>Expiración</label>
+            <input type="text" id="tarjetaExp" maxlength="5" placeholder="MM/AA" required pattern="\d{2}/\d{2}">
+          </div>
+          <div class="input-group" style="flex:1;">
+            <label>CVV</label>
+            <input type="password" id="tarjetaCVV" maxlength="4" placeholder="CVV" required pattern="\d{3,4}">
+          </div>
+        </div>
+        <div style="margin-top:18px; display:flex; gap:10px;">
+          <button type="submit" class="btn-pagar">Pagar</button>
+          <button type="button" class="btn-cancelar" onclick="cerrarModalTarjeta()">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <style>
+  .modal-tarjeta-bg {
+    position: fixed; left: 0; top: 0; width: 100vw; height: 100vh;
+    background: rgba(30,40,80,0.45);
+    z-index: 99999; display: flex; align-items: center; justify-content: center;
+  }
+  .modal-tarjeta {
+    background: #fff;
+    border-radius: 18px;
+    box-shadow: 0 8px 32px #0003;
+    padding: 32px 28px 22px 28px;
+    min-width: 320px;
+    max-width: 96vw;
+    animation: fadeInScale 0.3s;
+  }
+  .modal-tarjeta h2 { margin-top:0; color:#1a237e; }
+  .input-group { margin-bottom: 14px; }
+  .input-group label { display:block; font-size:0.95em; margin-bottom:4px; color:#3949ab; }
+  .input-group input {
+    width: 100%; padding: 8px 10px; border-radius: 7px; border: 1px solid #bdbdbd;
+    font-size: 1em; outline: none; transition: border 0.2s;
+  }
+  .input-group input:focus { border: 1.5px solid #1a237e; }
+  .btn-pagar {
+    background: #1a237e; color: #fff; border: none; border-radius: 7px;
+    padding: 10px 24px; font-size: 1em; font-weight: 600; cursor: pointer;
+    transition: background 0.2s;
+  }
+  .btn-pagar:hover { background: #3949ab; }
+  .btn-cancelar {
+    background: #eee; color: #1a237e; border: none; border-radius: 7px;
+    padding: 10px 24px; font-size: 1em; font-weight: 600; cursor: pointer;
+    transition: background 0.2s;
+  }
+  .btn-cancelar:hover { background: #e3e3e3; }
+  @keyframes fadeInScale {
+    from { opacity: 0; transform: scale(0.7);}
+    to { opacity: 1; transform: scale(1);}
+  }
+  </style>
+
+  <script>
+  function abrirModalTarjeta() {
+    document.getElementById('modalTarjeta').style.display = 'flex';
+  }
+  function cerrarModalTarjeta() {
+    document.getElementById('modalTarjeta').style.display = 'none';
+  }
+  // Mostrar modal al elegir tarjeta
+  document.getElementById('metodoPago').addEventListener('change', function() {
+    if (this.value === 'tarjeta') {
+      abrirModalTarjeta();
+      this.value = '';
+    }
+  });
+  // Validación y submit del modal
+  document.getElementById('formTarjeta').onsubmit = function(e) {
+    e.preventDefault();
+    // Aquí puedes validar y simular el pago
+    cerrarModalTarjeta();
+    document.getElementById('metodoPago').value = 'tarjeta';
+    document.getElementById('facturaMsg').innerHTML = '<div class="loading-anim"><div class="lds-ring"><div></div><div></div><div></div><div></div></div><div style="margin-top:12px;color:#1a237e;font-weight:600;">Procesando pago...</div></div>';
+    document.getElementById('facturaForm').dispatchEvent(new Event('submit', {cancelable:true}));
+  };
+  </script>
   <script>
     // Navbar logout
     const isLoggedIn = localStorage.getItem('token') !== null;
@@ -267,6 +366,28 @@
     };
     document.getElementById('facturaForm').onsubmit = async function(e) {
       e.preventDefault();
+      // Validación nombre solo letras y espacios
+      const nombreInput = document.getElementById('nombre');
+      const nombreError = document.getElementById('nombreError');
+      if (!/^[A-Za-zÁÉÍÓÚáéíóúÑñ ]{2,}$/.test(nombreInput.value)) {
+        nombreError.innerText = 'El nombre solo debe contener letras y espacios.';
+        nombreError.style.display = 'block';
+        nombreInput.focus();
+        return;
+      } else {
+        nombreError.style.display = 'none';
+      }
+      // Validación NIT solo números
+      const nitInput = document.getElementById('nit');
+      const nitError = document.getElementById('nitError');
+      if (!/^[0-9]+$/.test(nitInput.value)) {
+        nitError.innerText = 'El NIT debe contener solo números.';
+        nitError.style.display = 'block';
+        nitInput.focus();
+        return;
+      } else {
+        nitError.style.display = 'none';
+      }
       document.getElementById('facturaMsg').innerHTML = `
         <div class="loading-anim">
           <div class="lds-ring"><div></div><div></div><div></div><div></div></div>

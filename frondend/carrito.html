@@ -230,7 +230,7 @@
 </head>
 <body>
   <nav class="navbar">
-    <div class="logo">LabServicios</div>
+    <div class="logo">PENSALA</div>
     <div class="nav-links">
       <a href="servicios.html">Servicios</a>
       <a href="carrito.html">Carrito</a>
@@ -241,7 +241,10 @@
     <h2>Carrito de Servicios</h2>
     <div id="carrito"></div>
     <div class="carrito-total"></div>
-    <button id="pagarBtn" class="btn" style="margin-top:32px;width:100%;font-size:1.2rem;">Pagar</button>
+    <div style="display:flex;justify-content:space-between;gap:10px;">
+      <button id="vaciarBtn" class="btn" style="background:#e53935;">Vaciar Carrito</button>
+      <button id="pagarBtn" class="btn" style="width:100%;font-size:1.2rem;">Pagar</button>
+    </div>
   </div>
   <script>
     // Navbar logout
@@ -255,14 +258,14 @@
       const token = localStorage.getItem('token');
       if (!token) { window.location.href = 'index.html'; return; }
       const res = await fetch('http://localhost:3000/api/carrito', {
-        headers: { 'Authorization': 'Bearer ' + token }
+        headers: { 'Authorization': 'Bearer ' + token, 'Cache-Control': 'no-cache' }
       });
       const data = await res.json();
       if (!res.ok) { document.getElementById('carrito').innerText = 'Error al cargar carrito'; return; }
       let html = '<table><tr><th>Servicio</th><th>Cantidad</th><th>Precio</th><th>Total</th><th>Eliminar</th></tr>';
       let total = 0;
-      data.forEach((item, idx) => {
-        html += `<tr><td>${item.nombre}</td><td>${item.cantidad}</td><td>Bs ${Number(item.precio).toFixed(2)}</td><td>Bs ${(item.precio * item.cantidad).toFixed(2)}</td><td><button class='btn-eliminar' data-idx='${idx}'>🗑️</button></td></tr>`;
+      data.forEach((item) => {
+        html += `<tr><td>${item.nombre}</td><td>${item.cantidad}</td><td>Bs ${Number(item.precio).toFixed(2)}</td><td>Bs ${(item.precio * item.cantidad).toFixed(2)}</td><td><button class='btn-eliminar' data-id='${item.id}'>🗑️</button></td></tr>`;
         total += item.precio * item.cantidad;
       });
       html += `</table>`;
@@ -271,17 +274,27 @@
       // Botones eliminar
       document.querySelectorAll('.btn-eliminar').forEach(btn => {
         btn.onclick = async function() {
-          const idx = this.getAttribute('data-idx');
-          await eliminarDelCarrito(idx);
+          const id = this.getAttribute('data-id');
+          await eliminarDelCarrito(id);
         };
       });
     }
-    async function eliminarDelCarrito(idx) {
+    async function eliminarDelCarrito(id) {
+      if (!confirm('¿Estás seguro de que deseas eliminar este servicio del carrito?')) return;
       const token = localStorage.getItem('token');
       await fetch('http://localhost:3000/api/carrito/eliminar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-        body: JSON.stringify({ idx: Number(idx) })
+        body: JSON.stringify({ id: Number(id) })
+      });
+      cargarCarrito();
+    }
+    document.getElementById('vaciarBtn').onclick = async function() {
+      if (!confirm('¿Estás seguro de que deseas vaciar todo el carrito?')) return;
+      const token = localStorage.getItem('token');
+      await fetch('http://localhost:3000/api/carrito/vaciar', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + token }
       });
       cargarCarrito();
     }

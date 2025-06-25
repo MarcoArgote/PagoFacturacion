@@ -11,16 +11,21 @@ $mysqli = new mysqli('db', 'user', 'userpassword', 'serviciosdb');
 if ($mysqli->connect_errno) {
     die('Error de conexión: ' . $mysqli->connect_error);
 }
+$mysqli->set_charset('utf8mb4');
 $id = isset($_GET['id']) ? intval($_GET['id']) : 0;
 $detalles = isset($_GET['detalles']);
-if ($id <= 0) die('ID de factura inválido');
+if ($id <= 0) die('<div style="color:red;font-family:sans-serif;margin:2em auto;text-align:center;">ID de factura inválido</div>');
 $res = $mysqli->query("SELECT * FROM facturas WHERE id = $id");
-if (!$res || $res->num_rows === 0) die('Factura no encontrada');
+if (!$res || $res->num_rows === 0) die('<div style="color:red;font-family:sans-serif;margin:2em auto;text-align:center;">Factura no encontrada</div>');
 $factura = $res->fetch_assoc();
 $datos = json_decode($factura['datos_cliente'], true);
 $res2 = $mysqli->query("SELECT s.nombre, fs.cantidad, fs.precio_unitario FROM factura_servicios fs JOIN servicios s ON fs.servicio_id = s.id WHERE fs.factura_id = $id");
-$servicios = $res2->fetch_all(MYSQLI_ASSOC);
+$servicios = $res2 ? $res2->fetch_all(MYSQLI_ASSOC) : [];
 if ($detalles) {
+    if (empty($servicios)) {
+        echo "<div style='color:red;font-family:sans-serif;margin:2em auto;text-align:center;'>No hay detalles de servicios para esta factura.</div>";
+        exit;
+    }
     echo "<html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1.0'>\n";
     echo "<title>Factura #$id</title>\n";
     echo "<link href='https://fonts.googleapis.com/css?family=Montserrat:400,700&display=swap' rel='stylesheet'>\n";
@@ -94,3 +99,4 @@ $pdf->Cell(150,8,'Total',1);
 $pdf->Cell(40,8,number_format($total,2),1);
 $pdf->Output('D', 'factura_'.$id.'.pdf');
 exit;
+?>
