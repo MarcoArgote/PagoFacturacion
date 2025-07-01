@@ -206,6 +206,58 @@
     @keyframes check-appear {
       to { stroke-dashoffset: 0; }
     }
+    .metodo-pago-selector {
+      display: flex;
+      gap: 18px;
+      justify-content: center;
+      margin-bottom: 18px;
+    }
+    .pago-opcion {
+      background: #f5f7fa;
+      border: 2px solid #bdbdbd;
+      border-radius: 12px;
+      padding: 18px 22px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 1.05rem;
+      box-shadow: 0 2px 8px #0001;
+      transition: border 0.25s, box-shadow 0.25s, background 0.25s, transform 0.18s;
+      min-width: 110px;
+      user-select: none;
+    }
+    .pago-opcion.selected {
+      border: 2.5px solid #1a237e;
+      background: #e3eafc;
+      box-shadow: 0 4px 16px #1a237e22;
+      transform: scale(1.06);
+    }
+    .pago-opcion:hover {
+      border: 2.5px solid #3949ab;
+      background: #f0f4ff;
+      box-shadow: 0 4px 16px #3949ab22;
+    }
+    .pago-icon {
+      font-size: 2.1rem;
+      margin-bottom: 6px;
+    }
+    .pago-extra-anim {
+      min-height: 60px;
+      margin-bottom: 8px;
+      transition: all 0.35s cubic-bezier(.4,0,.2,1);
+      opacity: 1;
+    }
+    .pago-extra-anim.hide {
+      opacity: 0;
+      transform: translateY(20px);
+      pointer-events: none;
+    }
+    .pago-extra-anim.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
   </style>
 </head>
 <body>
@@ -227,116 +279,28 @@
         <input type="text" id="nit" placeholder="NIT o RFC" required pattern="[0-9]+" title="Solo números" />
         <span id="nitError" class="factura-form error" style="display:none;"></span>
         <textarea id="otros" placeholder="Otros datos"></textarea>
-        <h4>Método de Pago</h4>
-        <select id="metodoPago" required>
-          <option value="">Seleccione...</option>
-          <option value="tarjeta">Tarjeta de Débito</option>
-          <option value="qr">QR</option>
-          <option value="efectivo">Efectivo</option>
-        </select>
-        <div id="pagoExtra"></div>
+        <h4 style="margin-top:28px;margin-bottom:10px;font-size:1.15rem;color:#1a237e;letter-spacing:1px;">Método de Pago</h4>
+        <div class="metodo-pago-selector">
+          <div class="pago-opcion" data-metodo="tarjeta">
+            <span class="pago-icon">💳</span>
+            <span>Tarjeta de Débito</span>
+          </div>
+          <div class="pago-opcion" data-metodo="qr">
+            <span class="pago-icon">📱</span>
+            <span>Yape (QR)</span>
+          </div>
+          <div class="pago-opcion" data-metodo="efectivo">
+            <span class="pago-icon">💵</span>
+            <span>Efectivo</span>
+          </div>
+        </div>
+        <div id="pagoExtra" class="pago-extra-anim"></div>
         <button type="submit" class="btn">Pagar y Generar Factura</button>
       </form>
       <div id="facturaMsg"></div>
     </div>
   </div>
 
-  <!-- Modal de pago con tarjeta -->
-  <div id="modalTarjeta" class="modal-tarjeta-bg" style="display:none;">
-    <div class="modal-tarjeta">
-      <h2>Pagar con Tarjeta</h2>
-      <form id="formTarjeta">
-        <div class="input-group">
-          <label>Número de tarjeta</label>
-          <input type="text" id="tarjetaNum" maxlength="19" placeholder="0000 0000 0000 0000" required pattern="\d{4} \d{4} \d{4} \d{4}">
-        </div>
-        <div class="input-group">
-          <label>Nombre en la tarjeta</label>
-          <input type="text" id="tarjetaNombre" maxlength="40" placeholder="Como aparece en la tarjeta" required>
-        </div>
-        <div style="display:flex; gap:10px;">
-          <div class="input-group" style="flex:1;">
-            <label>Expiración</label>
-            <input type="text" id="tarjetaExp" maxlength="5" placeholder="MM/AA" required pattern="\d{2}/\d{2}">
-          </div>
-          <div class="input-group" style="flex:1;">
-            <label>CVV</label>
-            <input type="password" id="tarjetaCVV" maxlength="4" placeholder="CVV" required pattern="\d{3,4}">
-          </div>
-        </div>
-        <div style="margin-top:18px; display:flex; gap:10px;">
-          <button type="submit" class="btn-pagar">Pagar</button>
-          <button type="button" class="btn-cancelar" onclick="cerrarModalTarjeta()">Cancelar</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <style>
-  .modal-tarjeta-bg {
-    position: fixed; left: 0; top: 0; width: 100vw; height: 100vh;
-    background: rgba(30,40,80,0.45);
-    z-index: 99999; display: flex; align-items: center; justify-content: center;
-  }
-  .modal-tarjeta {
-    background: #fff;
-    border-radius: 18px;
-    box-shadow: 0 8px 32px #0003;
-    padding: 32px 28px 22px 28px;
-    min-width: 320px;
-    max-width: 96vw;
-    animation: fadeInScale 0.3s;
-  }
-  .modal-tarjeta h2 { margin-top:0; color:#1a237e; }
-  .input-group { margin-bottom: 14px; }
-  .input-group label { display:block; font-size:0.95em; margin-bottom:4px; color:#3949ab; }
-  .input-group input {
-    width: 100%; padding: 8px 10px; border-radius: 7px; border: 1px solid #bdbdbd;
-    font-size: 1em; outline: none; transition: border 0.2s;
-  }
-  .input-group input:focus { border: 1.5px solid #1a237e; }
-  .btn-pagar {
-    background: #1a237e; color: #fff; border: none; border-radius: 7px;
-    padding: 10px 24px; font-size: 1em; font-weight: 600; cursor: pointer;
-    transition: background 0.2s;
-  }
-  .btn-pagar:hover { background: #3949ab; }
-  .btn-cancelar {
-    background: #eee; color: #1a237e; border: none; border-radius: 7px;
-    padding: 10px 24px; font-size: 1em; font-weight: 600; cursor: pointer;
-    transition: background 0.2s;
-  }
-  .btn-cancelar:hover { background: #e3e3e3; }
-  @keyframes fadeInScale {
-    from { opacity: 0; transform: scale(0.7);}
-    to { opacity: 1; transform: scale(1);}
-  }
-  </style>
-
-  <script>
-  function abrirModalTarjeta() {
-    document.getElementById('modalTarjeta').style.display = 'flex';
-  }
-  function cerrarModalTarjeta() {
-    document.getElementById('modalTarjeta').style.display = 'none';
-  }
-  // Mostrar modal al elegir tarjeta
-  document.getElementById('metodoPago').addEventListener('change', function() {
-    if (this.value === 'tarjeta') {
-      abrirModalTarjeta();
-      this.value = '';
-    }
-  });
-  // Validación y submit del modal
-  document.getElementById('formTarjeta').onsubmit = function(e) {
-    e.preventDefault();
-    // Aquí puedes validar y simular el pago
-    cerrarModalTarjeta();
-    document.getElementById('metodoPago').value = 'tarjeta';
-    document.getElementById('facturaMsg').innerHTML = '<div class="loading-anim"><div class="lds-ring"><div></div><div></div><div></div><div></div></div><div style="margin-top:12px;color:#1a237e;font-weight:600;">Procesando pago...</div></div>';
-    document.getElementById('facturaForm').dispatchEvent(new Event('submit', {cancelable:true}));
-  };
-  </script>
   <script>
     // Navbar logout
     const isLoggedIn = localStorage.getItem('token') !== null;
@@ -353,17 +317,11 @@
       if (datos.nit) document.getElementById('nit').value = datos.nit;
       if (datos.otros) document.getElementById('otros').value = datos.otros;
     }
-    document.getElementById('metodoPago').onchange = function() {
-      const metodo = this.value;
-      const pagoExtra = document.getElementById('pagoExtra');
-      if (metodo === 'tarjeta') {
-        pagoExtra.innerHTML = '<input type="text" id="tarjeta" placeholder="Número de tarjeta" maxlength="16" required />';
-      } else if (metodo === 'qr') {
-        pagoExtra.innerHTML = '<img src="https://api.qrserver.com/v1/create-qr-code/?data=PagoLaboratorio&size=120x120" alt="QR de pago" /><br><small>Escanee el código QR para pagar</small>';
-      } else {
-        pagoExtra.innerHTML = '';
-      }
-    };
+    // Eliminar lógica antigua de select/metodoPago
+    // Seleccionar por defecto la opción 'tarjeta' al cargar la página
+    window.addEventListener('DOMContentLoaded', function() {
+      if (typeof seleccionarMetodoPago === 'function') seleccionarMetodoPago('tarjeta');
+    });
     document.getElementById('facturaForm').onsubmit = async function(e) {
       e.preventDefault();
       // Validación nombre solo letras y espacios
@@ -388,7 +346,6 @@
       } else {
         nitError.style.display = 'none';
       }
-      // Elimina cualquier animación previa de procesando
       document.getElementById('facturaMsg').innerHTML = '';
       const token = localStorage.getItem('token');
       const datos = {
@@ -398,21 +355,25 @@
         otros: document.getElementById('otros').value
       };
       localStorage.setItem('datosFactura', JSON.stringify(datos));
-      const metodoPago = document.getElementById('metodoPago').value;
+      // Usar la variable moderna del método de pago
+      const metodoPago = metodoPagoSeleccionado;
       let pagoValido = false;
       if (metodoPago === 'tarjeta') {
-        const tarjeta = document.getElementById('tarjeta').value;
-        pagoValido = tarjeta.length === 16 && !isNaN(Number(tarjeta));
-      } else if (metodoPago === 'qr') {
-        pagoValido = true;
-      } else if (metodoPago === 'efectivo') {
+        // Validar campos de tarjeta
+        const num = document.getElementById('tarjetaNum')?.value?.replace(/\s/g, '') || '';
+        const nombreT = document.getElementById('tarjetaNombre')?.value?.trim() || '';
+        const exp = document.getElementById('tarjetaExp')?.value || '';
+        const cvv = document.getElementById('tarjetaCVV')?.value || '';
+        if(num.length === 16 && nombreT.length > 2 && /^\d{2}\/\d{2,4}$/.test(exp) && cvv.length >= 3 && cvv.length <= 4) {
+          pagoValido = true;
+        }
+      } else if (metodoPago === 'qr' || metodoPago === 'efectivo') {
         pagoValido = true;
       }
-      if (!pagoValido) {
-        document.getElementById('facturaMsg').innerHTML = '<div class="factura-form error">Datos de pago inválidos.</div>';
+      if (!pagoValido || !metodoPago) {
+        document.getElementById('facturaMsg').innerHTML = '<div class="factura-form error">Seleccione y complete un método de pago válido.</div>';
         return;
       }
-      // Simular carga
       setTimeout(async () => {
         const res = await fetch('http://localhost:3000/api/facturar', {
           method: 'POST',
@@ -428,31 +389,107 @@
           overlay.style.top = 0;
           overlay.style.width = '100vw';
           overlay.style.height = '100vh';
-          overlay.style.background = 'rgba(30,40,80,0.18)';
+          overlay.style.background = 'rgba(30,40,80,0.22)';
+          overlay.style.backdropFilter = 'blur(4px)';
           overlay.style.zIndex = 99999;
           overlay.style.display = 'flex';
           overlay.style.alignItems = 'center';
           overlay.style.justifyContent = 'center';
           overlay.innerHTML = `
-            <div class="pago-exito-anim pago-exito-anim-mejorada" style="background:#fff;padding:44px 38px 32px 38px;border-radius:22px;box-shadow:0 8px 32px #0003;max-width:98vw;min-width:320px;display:flex;flex-direction:column;align-items:center;">
-              <div class="checkmark-svg-wrap" style="display:flex;align-items:center;justify-content:center;width:100%;margin-bottom:18px;">
-                <svg class="checkmark-svg" viewBox="0 0 80 80">
-                  <circle class="circle" cx="40" cy="40" r="36"/>
-                  <polyline class="check" points="24,43 36,55 58,30"/>
+            <div class="pago-exito-modal-anim">
+              <div class="checkmark-svg-wrap-pro" style="display:flex;align-items:center;justify-content:center;width:100%;margin-bottom:18px;">
+                <svg class="checkmark-svg-pro" viewBox="0 0 100 100">
+                  <circle class="circle-pro" cx="50" cy="50" r="44"/>
+                  <polyline class="check-pro" points="28,54 46,70 74,36"/>
                 </svg>
               </div>
-              <h3 style="color:#388e3c;font-size:1.6rem;font-weight:700;margin:0 0 10px 0;letter-spacing:1px;">¡Pago realizado con éxito!</h3>
+              <h3 class="pago-exito-titulo-pro"><span style='font-size:2.1rem;vertical-align:-6px;'>🎉</span> ¡Pago realizado con éxito!</h3>
               <div class="pago-btns" style="display:flex;gap:1.5rem;margin-top:10px;">
                 <a href="factura.php?id=${data.facturaId}" target="_blank" class="btn btn-factura">Descargar Factura PDF</a>
                 <a href="factura.php?id=${data.facturaId}&detalles=1" target="_blank" class="btn btn-detalles">Ver Detalles</a>
               </div>
+              <button class="cerrar-modal-exito" title="Cerrar">✖</button>
             </div>
+            <style>
+            .pago-exito-modal-anim {
+              background:#fff;
+              padding:54px 38px 38px 38px;
+              border-radius:28px;
+              box-shadow:0 12px 48px #0004, 0 2px 12px #0002;
+              max-width:98vw;
+              min-width:320px;
+              display:flex;
+              flex-direction:column;
+              align-items:center;
+              animation: fadeInScale 0.7s cubic-bezier(.4,0,.2,1);
+              position:relative;
+            }
+            @keyframes fadeInScale {
+              from { opacity:0; transform:scale(0.85) translateY(40px); }
+              to { opacity:1; transform:scale(1) translateY(0); }
+            }
+            .checkmark-svg-pro {
+              width: 110px; height: 110px; display: block; margin: 0 auto 18px auto;
+            }
+            .circle-pro {
+              fill: none;
+              stroke: #4caf50;
+              stroke-width: 7;
+              stroke-dasharray: 276;
+              stroke-dashoffset: 276;
+              animation: circle-appear-pro 0.7s cubic-bezier(.6,-0.28,.74,.05) forwards;
+            }
+            .check-pro {
+              fill: none;
+              stroke: #4caf50;
+              stroke-width: 7;
+              stroke-linecap: round;
+              stroke-linejoin: round;
+              stroke-dasharray: 60;
+              stroke-dashoffset: 60;
+              animation: check-appear-pro 0.5s 0.6s cubic-bezier(.6,-0.28,.74,.05) forwards, check-bounce 0.5s 1.1s cubic-bezier(.6,-0.28,.74,.05) 1;
+            }
+            @keyframes circle-appear-pro { to { stroke-dashoffset: 0; } }
+            @keyframes check-appear-pro { to { stroke-dashoffset: 0; } }
+            @keyframes check-bounce {
+              0% { transform: scale(1); }
+              40% { transform: scale(1.18); }
+              60% { transform: scale(0.95); }
+              100% { transform: scale(1); }
+            }
+            .pago-exito-titulo-pro {
+              color:#388e3c;
+              font-size:1.7rem;
+              font-weight:700;
+              margin:0 0 12px 0;
+              letter-spacing:1px;
+              text-align:center;
+              animation: fadeInTitle 0.7s 0.3s both;
+            }
+            @keyframes fadeInTitle {
+              from { opacity:0; transform:translateY(20px); }
+              to { opacity:1; transform:translateY(0); }
+            }
+            .cerrar-modal-exito {
+              position:absolute; top:18px; right:18px;
+              background:rgba(230,230,230,0.9);
+              border:none; border-radius:50%; width:38px; height:38px;
+              font-size:1.3rem; color:#222; cursor:pointer;
+              box-shadow:0 2px 8px #0001;
+              transition: background 0.2s, color 0.2s, transform 0.18s;
+              opacity:0.7;
+            }
+            .cerrar-modal-exito:hover {
+              background:#e53935; color:#fff; opacity:1; transform:scale(1.12);
+            }
+            </style>
           `;
           document.body.appendChild(overlay);
           window.scrollTo({ top: 0, behavior: 'smooth' });
           setTimeout(() => {
-            overlay.addEventListener('click', () => overlay.remove());
-          }, 1200);
+            overlay.querySelector('.cerrar-modal-exito').onclick = () => overlay.remove();
+            overlay.addEventListener('click', e => { if(e.target === overlay) overlay.remove(); });
+          }, 800);
         } else {
           document.getElementById('facturaMsg').innerHTML = '<div class="factura-form error">' + (data.error || 'Error al generar factura') + '</div>';
         }
@@ -470,6 +507,66 @@
       });
     });
     cargarDatosFacturaPrevios();
+  </script>
+  <script>
+// Eliminar completamente la lógica antigua del select/metodoPago y modal
+const pagoOpciones = document.querySelectorAll('.pago-opcion');
+let metodoPagoSeleccionado = '';
+function seleccionarMetodoPago(metodo) {
+  metodoPagoSeleccionado = metodo;
+  pagoOpciones.forEach(op => {
+    if (op.getAttribute('data-metodo') === metodo) {
+      op.classList.add('selected');
+    } else {
+      op.classList.remove('selected');
+    }
+  });
+  mostrarPagoExtra(metodo);
+}
+pagoOpciones.forEach(op => {
+  op.addEventListener('click', function() {
+    seleccionarMetodoPago(this.getAttribute('data-metodo'));
+  });
+});
+function mostrarPagoExtra(metodo) {
+  const pagoExtra = document.getElementById('pagoExtra');
+  pagoExtra.classList.remove('show','hide');
+  pagoExtra.classList.add('hide');
+  setTimeout(() => {
+    if (metodo === 'tarjeta') {
+      pagoExtra.innerHTML = `
+        <div class="input-group">
+          <label>Número de tarjeta</label>
+          <input type="text" id="tarjetaNum" maxlength="19" placeholder="0000 0000 0000 0000" required autocomplete="cc-number">
+        </div>
+        <div class="input-group">
+          <label>Nombre en la tarjeta</label>
+          <input type="text" id="tarjetaNombre" maxlength="40" placeholder="Como aparece en la tarjeta" required>
+        </div>
+        <div class="input-group">
+          <label>Fecha de expiración</label>
+          <input type="text" id="tarjetaExp" maxlength="7" placeholder="MM/AA" required>
+        </div>
+        <div class="input-group">
+          <label>Código de seguridad</label>
+          <input type="text" id="tarjetaCVV" maxlength="4" placeholder="CVV" required>
+        </div>
+      `;
+    } else if (metodo === 'qr') {
+      pagoExtra.innerHTML = '<img src="https://api.qrserver.com/v1/create-qr-code/?data=PagoLaboratorio&size=120x120" alt="QR de pago" /><br><small>Escanee el código QR para pagar</small>';
+    } else {
+      pagoExtra.innerHTML = '';
+    }
+    setTimeout(() => {
+      pagoExtra.classList.remove('hide');
+      pagoExtra.classList.add('show');
+    }, 50);
+  }, 150);
+}
+// Seleccionar por defecto la opción 'tarjeta' al cargar la página
+window.addEventListener('DOMContentLoaded', function() {
+  seleccionarMetodoPago('tarjeta');
+});
   </script>
 </body>
 </html>

@@ -7,7 +7,6 @@
   <style>
     body {
       font-family: 'Segoe UI', Arial, sans-serif;
-      background: #181c25;
       min-height: 100vh;
       margin: 0;
       overflow: hidden;
@@ -15,23 +14,19 @@
       flex-direction: column;
       justify-content: center;
       align-items: center;
-    }
-    .background {
-      position: fixed;
-      top: 0; left: 0; width: 100vw; height: 100vh;
-      z-index: 0;
-      pointer-events: none;
+      background: url('https://wallpapers.com/images/hd/laboratory-background-mg9d9d5x8zzf2noz.jpg') no-repeat center center fixed;
+      background-size: cover;
     }
     .login-container {
       max-width: 350px;
       width: 100%;
       margin: 0 auto;
-      background: rgba(255,255,255,0.97);
+      background: rgba(255,255,255,0.80);
       padding: 32px 24px 24px 24px;
       border-radius: 18px;
       box-shadow: 0 8px 32px #0003, 0 1.5px 8px #0001;
       position: relative;
-      z-index: 1;
+      z-index: 2;
       backdrop-filter: blur(2px);
       box-sizing: border-box;
       display: flex;
@@ -39,6 +34,37 @@
       align-items: stretch;
       justify-content: center;
       min-width: 0;
+    }
+    .bg {
+      position: fixed;
+      left: 0;
+      top: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 0;
+      background: transparent;
+    }
+    #tsparticles {
+      position: fixed;
+      left: 0;
+      top: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 1;
+      pointer-events: none;
+      background: none;
+    }
+    /* Refuerzo para el canvas generado por tsparticles */
+    #tsparticles > canvas {
+      position: absolute !important;
+      left: 0 !important;
+      top: 0 !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      z-index: 1 !important;
+      pointer-events: none !important;
+      background: none !important;
+      display: block !important;
     }
     h2 {
       text-align: center;
@@ -107,13 +133,116 @@
       margin: 30px 0 20px 0;
     }
     a { text-decoration: none; }
+    .spline-watermark { display: none !important; }
     @media (max-width: 500px) {
       .login-container { max-width: 96vw; width: 96vw; padding: 18px 2vw; margin: 0 auto; }
+    }
+    /* Estilos para el loader de barra horizontal */
+    .bar-loader-outer {
+      display: flex; align-items: center; justify-content: center; width: 220px; height: 40px; position: relative;
+    }
+    .bar-loader-track {
+      width: 180px; height: 12px; border-radius: 8px; background: #e0eafc44; overflow: hidden; position: relative; box-shadow: 0 2px 16px #00c6ff33;
+    }
+    .bar-loader-bar {
+      width: 60px; height: 100%; border-radius: 8px; background: linear-gradient(90deg,#00c6ff 40%,#7ee8fa 100%);
+      box-shadow: 0 0 24px #00c6ff99, 0 0 32px #7ee8fa55;
+      position: absolute; left: -60px; top: 0;
+      animation: bar-slide 1.2s cubic-bezier(.7,0,.3,1) infinite;
+    }
+    @keyframes bar-slide {
+      0% { left: -60px; opacity: 0.2; }
+      10% { opacity: 1; }
+      50% { left: 120px; opacity: 1; }
+      90% { opacity: 1; }
+      100% { left: 180px; opacity: 0.2; }
+    }
+    /* Estilos para la navbar */
+    .navbar {
+      width: 100%;
+      padding: 10px 20px;
+      background: rgba(10, 25, 49, 0.85);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 1000;
+      backdrop-filter: blur(10px);
+    }
+    .navbar .logo {
+      font-size: 1.5em;
+      font-weight: bold;
+      letter-spacing: 0.05em;
+    }
+    .navbar .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .navbar .nav-links a {
+      color: #fff;
+      text-decoration: none;
+      font-size: 1em;
+      transition: color 0.2s;
+    }
+    .navbar .nav-links a:hover {
+      color: #00c6ff;
+    }
+    .navbar #logoutBtn {
+      background: none;
+      border: none;
+      color: #fff;
+      font-size: 1em;
+      cursor: pointer;
+      transition: color 0.2s;
+    }
+    .navbar #logoutBtn:hover {
+      color: #e74c3c;
     }
   </style>
 </head>
 <body>
-  <div class="background"><canvas id="bgCanvas"></canvas></div>
+  <!-- Loader de carga inicial y transición: barra luminosa horizontal -->
+  <div id="loader-bg" style="position:fixed;z-index:10000;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(10,25,49,0.65);backdrop-filter:blur(8px);transition:opacity 0.5s;">
+    <div class="bar-loader-outer">
+      <div class="bar-loader-track">
+        <div class="bar-loader-bar"></div>
+      </div>
+    </div>
+  </div>
+  <div class="bg" style="position:fixed;left:0;top:0;width:100vw;height:100vh;z-index:0;background:#0a1931;"></div>
+  <!-- SVG Rayos animados -->
+  <svg id="bg-lightning" width="100vw" height="100vh" viewBox="0 0 1920 1080" style="position:fixed;left:0;top:0;width:100vw;height:100vh;z-index:0;pointer-events:none;">
+    <defs>
+      <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+        <feGaussianBlur stdDeviation="8" result="coloredBlur"/>
+        <feMerge>
+          <feMergeNode in="coloredBlur"/>
+          <feMergeNode in="SourceGraphic"/>
+        </feMerge>
+      </filter>
+      <linearGradient id="rayGrad" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#00c6ff"/>
+        <stop offset="100%" stop-color="#7ee8fa"/>
+      </linearGradient>
+    </defs>
+    <polyline id="ray1" points="400,0 600,400 500,600 700,1080" stroke="url(#rayGrad)" stroke-width="10" fill="none" filter="url(#glow)">
+      <animate attributeName="points" values="400,0 600,400 500,600 700,1080;400,0 650,350 550,650 700,1080;400,0 600,400 500,600 700,1080" keyTimes="0;0.5;1" dur="1.2s" repeatCount="indefinite"/>
+    </polyline>
+    <polyline id="ray2" points="1520,0 1300,500 1400,700 1200,1080" stroke="url(#rayGrad)" stroke-width="8" fill="none" filter="url(#glow)" opacity="0.7">
+      <animate attributeName="points" values="1520,0 1300,500 1400,700 1200,1080;1520,0 1350,450 1450,750 1200,1080;1520,0 1300,500 1400,700 1200,1080" keyTimes="0;0.5;1" dur="1.5s" repeatCount="indefinite"/>
+    </polyline>
+    <polyline id="ray3" points="900,0 950,300 900,700 1000,1080" stroke="url(#rayGrad)" stroke-width="6" fill="none" filter="url(#glow)" opacity="0.5">
+      <animate attributeName="points" values="900,0 950,300 900,700 1000,1080;900,0 970,350 920,750 1000,1080;900,0 950,300 900,700 1000,1080" keyTimes="0;0.5;1" dur="1.7s" repeatCount="indefinite"/>
+    </polyline>
+  </svg>
+  
+    <div class="logo">PENSALA</div>
+    
+  
   <div class="login-container" id="loginBox">
     <h2>Iniciar Sesión</h2>
     <form id="loginForm">
@@ -157,43 +286,96 @@
       ¿Ya tienes cuenta? <a href="#" id="goLogin" style="color:#007bff;cursor:pointer;">Inicia sesión</a>
     </div>
   </div>
+  <script src="https://cdn.jsdelivr.net/npm/tsparticles@3.3.0/tsparticles.bundle.min.js"></script>
   <script>
-    // Redirigir a servicios.html si el usuario entra a index.html
-    if (window.location.pathname.endsWith('index.html') || window.location.pathname === '/' || window.location.pathname === '/index.html') {
-      // Si viene de 'Iniciar sesión' desde navbar, mostrar login
-      const params = new URLSearchParams(window.location.search);
-      if (params.get('showLogin') === '1') {
-        document.addEventListener('DOMContentLoaded', function() {
-          document.getElementById('loginBox').style.display = 'block';
-          document.getElementById('registerBox').style.display = 'none';
-        });
-      } else {
-        window.location.href = 'servicios.html';
+    // Redirección automática a servicios.html salvo que venga con ?showLogin=1
+    if (!window.location.search.includes('showLogin=1')) {
+      window.location.href = 'servicios.html';
+    }
+    document.addEventListener('DOMContentLoaded', function() {
+      tsParticles.load("tsparticles", {
+        fullScreen: { enable: false },
+        background: { color: "#0a1931" },
+        fpsLimit: 60,
+        particles: {
+          number: { value: 160, density: { enable: true, area: 1000 } },
+          color: { value: ["#ffffff", "#7ee8fa", "#a259f7", "#00c6ff", "#b388ff"] },
+          shape: { type: "circle" },
+          opacity: { value: 0.8, random: { enable: true, minimumValue: 0.15 } },
+          size: { value: 2.5, random: { enable: true, minimumValue: 0.5 } },
+          move: {
+            enable: true,
+            speed: 0.7,
+            direction: "none",
+            random: true,
+            straight: false,
+            outModes: { default: "out" },
+            attract: { enable: false }
+          },
+          links: {
+            enable: false
+          },
+          twinkle: {
+            particles: {
+              enable: true,
+              frequency: 0.18,
+              color: "#fff",
+              opacity: 1
+            }
+          }
+        },
+        interactivity: {
+          events: {
+            onHover: {
+              enable: true,
+              mode: "repulse"
+            },
+            onClick: {
+              enable: true,
+              mode: "push"
+            },
+            resize: true
+          },
+          modes: {
+            repulse: {
+              distance: 120,
+              duration: 0.4
+            },
+            push: {
+              quantity: 2
+            }
+          }
+        },
+        detectRetina: true
+      });
+    });
+  </script>
+  <script>
+    // Pantalla de carga: ocultar cuando todo esté listo
+    function hideLoader() {
+      const loader = document.getElementById('loader-bg');
+      if (loader) {
+        loader.style.opacity = '0';
+        setTimeout(() => loader.style.display = 'none', 600);
       }
     }
-    // Fondo animado que sigue al cursor
-    const canvas = document.getElementById('bgCanvas');
-    const ctx = canvas.getContext('2d');
-    let w = window.innerWidth, h = window.innerHeight;
-    canvas.width = w; canvas.height = h;
-    let mouse = {x: w/2, y: h/2};
-    window.onresize = () => { w = window.innerWidth; h = window.innerHeight; canvas.width = w; canvas.height = h; };
-    document.onmousemove = e => { mouse.x = e.clientX; mouse.y = e.clientY; };
-    function drawBg() {
-      ctx.clearRect(0,0,w,h);
-      for(let i=0;i<18;i++){
-        let angle = (i/18)*2*Math.PI;
-        let r = 120 + 40*Math.sin(Date.now()/900 + i);
-        let x = mouse.x + Math.cos(angle)*r;
-        let y = mouse.y + Math.sin(angle)*r;
-        ctx.beginPath();
-        ctx.arc(x, y, 18, 0, 2*Math.PI);
-        ctx.fillStyle = `rgba(${100+100*Math.sin(angle)},${180+60*Math.cos(angle)},255,0.13)`;
-        ctx.fill();
+    document.addEventListener('DOMContentLoaded', function() {
+      // Si ya cargó tsparticles, ocultar loader
+      if (window.tsParticles && tsParticles.dom().length > 0) hideLoader();
+      else {
+        // Esperar a que cargue tsparticles
+        let tries = 0;
+        function checkParticles() {
+          if (window.tsParticles && tsParticles.dom().length > 0) hideLoader();
+          else if (++tries < 30) setTimeout(checkParticles, 100);
+          else hideLoader(); // Forzar ocultar tras 3s
+        }
+        checkParticles();
       }
-      requestAnimationFrame(drawBg);
-    }
-    drawBg();
+    });
+  </script>
+  <script>
+    // Elimino el redireccionamiento automático para que el login/registro siempre sea visible
     document.getElementById('goRegister').onclick = function() {
       document.getElementById('loginBox').style.display = 'none';
       document.getElementById('registerBox').style.display = 'block';
@@ -204,23 +386,34 @@
       document.getElementById('registerBox').style.display = 'none';
       document.getElementById('loginBox').style.display = 'block';
       document.getElementById('loginForm').reset();
-      document.getElementById('loginErrorMsg').innerText = '';
+      document.getElementById('errorMsg').innerText = '';
     };
     document.getElementById('loginForm').onsubmit = async function(e) {
       e.preventDefault();
       const email = document.getElementById('email').value;
       const password = document.getElementById('password').value;
-      const res = await fetch('http://localhost:3000/api/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
-      });
-      const data = await res.json();
-      if (res.ok) {
-        localStorage.setItem('token', data.token);
-        window.location.href = 'servicios.html';
-      } else {
-        document.getElementById('errorMsg').innerText = data.error || 'Error al iniciar sesión';
+      const transitionLoader = document.getElementById('loader-bg');
+      transitionLoader.style.display = 'flex';
+      try {
+        const res = await fetch('http://localhost:3000/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          localStorage.setItem('token', data.token);
+          localStorage.setItem('showTransitionLoader', '1');
+          setTimeout(() => {
+            window.location.href = 'servicios.html';
+          }, 700); // Deja ver la animación un momento
+        } else {
+          transitionLoader.style.display = 'none';
+          document.getElementById('errorMsg').innerText = data.error || 'Error al iniciar sesión';
+        }
+      } catch (err) {
+        transitionLoader.style.display = 'none';
+        document.getElementById('errorMsg').innerText = 'Error de conexión';
       }
     };
     // Validación de nombre en registro
@@ -251,7 +444,116 @@
       });
       const data = await res.json();
       if (res.ok) {
-        alert('Registro exitoso, ahora puedes iniciar sesión.');
+        // Animación profesional de registro exitoso
+        const overlay = document.createElement('div');
+        overlay.style.position = 'fixed';
+        overlay.style.left = 0;
+        overlay.style.top = 0;
+        overlay.style.width = '100vw';
+        overlay.style.height = '100vh';
+        overlay.style.background = 'rgba(30,40,80,0.22)';
+        overlay.style.backdropFilter = 'blur(4px)';
+        overlay.style.zIndex = 99999;
+        overlay.style.display = 'flex';
+        overlay.style.alignItems = 'center';
+        overlay.style.justifyContent = 'center';
+        overlay.innerHTML = `
+          <div class="pago-exito-modal-anim">
+            <div class="checkmark-svg-wrap-pro" style="display:flex;align-items:center;justify-content:center;width:100%;margin-bottom:18px;">
+              <svg class="checkmark-svg-pro" viewBox="0 0 100 100">
+                <circle class="circle-pro" cx="50" cy="50" r="44"/>
+                <polyline class="check-pro" points="28,54 46,70 74,36"/>
+              </svg>
+            </div>
+            <h3 class="pago-exito-titulo-pro"><span style='font-size:2.1rem;vertical-align:-6px;'>✅</span> ¡Registrado exitosamente!</h3>
+            <div style="color:#1a237e;font-size:1.1rem;margin-bottom:18px;text-align:center;">Inicie sesión para continuar.</div>
+            <button class="btn" id="goToLoginBtn" style="margin-top:0;">Iniciar sesión</button>
+            <button class="cerrar-modal-exito" title="Cerrar">✖</button>
+          </div>
+          <style>
+          .pago-exito-modal-anim {
+            background:#fff;
+            padding:54px 38px 38px 38px;
+            border-radius:28px;
+            box-shadow:0 12px 48px #0004, 0 2px 12px #0002;
+            max-width:98vw;
+            min-width:320px;
+            display:flex;
+            flex-direction:column;
+            align-items:center;
+            animation: fadeInScale 0.7s cubic-bezier(.4,0,.2,1);
+            position:relative;
+          }
+          @keyframes fadeInScale {
+            from { opacity:0; transform:scale(0.85) translateY(40px); }
+            to { opacity:1; transform:scale(1) translateY(0); }
+          }
+          .checkmark-svg-pro {
+            width: 110px; height: 110px; display: block; margin: 0 auto 18px auto;
+          }
+          .circle-pro {
+            fill: none;
+            stroke: #4caf50;
+            stroke-width: 7;
+            stroke-dasharray: 276;
+            stroke-dashoffset: 276;
+            animation: circle-appear-pro 0.7s cubic-bezier(.6,-0.28,.74,.05) forwards;
+          }
+          .check-pro {
+            fill: none;
+            stroke: #4caf50;
+            stroke-width: 7;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            stroke-dasharray: 60;
+            stroke-dashoffset: 60;
+            animation: check-appear-pro 0.5s 0.6s cubic-bezier(.6,-0.28,.74,.05) forwards, check-bounce 0.5s 1.1s cubic-bezier(.6,-0.28,.74,.05) 1;
+          }
+          @keyframes circle-appear-pro { to { stroke-dashoffset: 0; } }
+          @keyframes check-appear-pro { to { stroke-dashoffset: 0; } }
+          @keyframes check-bounce {
+            0% { transform: scale(1); }
+            40% { transform: scale(1.18); }
+            60% { transform: scale(0.95); }
+            100% { transform: scale(1); }
+          }
+          .pago-exito-titulo-pro {
+            color:#388e3c;
+            font-size:1.7rem;
+            font-weight:700;
+            margin:0 0 12px 0;
+            letter-spacing:1px;
+            text-align:center;
+            animation: fadeInTitle 0.7s 0.3s both;
+          }
+          @keyframes fadeInTitle {
+            from { opacity:0; transform:translateY(20px); }
+            to { opacity:1; transform:translateY(0); }
+          }
+          .cerrar-modal-exito {
+            position:absolute; top:18px; right:18px;
+            background:rgba(230,230,230,0.9);
+            border:none; border-radius:50%; width:38px; height:38px;
+            font-size:1.3rem; color:#222; cursor:pointer;
+            box-shadow:0 2px 8px #0001;
+            transition: background 0.2s, color 0.2s, transform 0.18s;
+            opacity:0.7;
+          }
+          .cerrar-modal-exito:hover {
+            background:#e53935; color:#fff; opacity:1; transform:scale(1.12);
+          }
+          </style>
+        `;
+        document.body.appendChild(overlay);
+        setTimeout(() => {
+          overlay.querySelector('.cerrar-modal-exito').onclick = () => overlay.remove();
+          overlay.querySelector('#goToLoginBtn').onclick = () => {
+            overlay.remove();
+            document.getElementById('registerBox').style.display = 'none';
+            document.getElementById('loginBox').style.display = 'block';
+          };
+          overlay.addEventListener('click', e => { if(e.target === overlay) overlay.remove(); });
+        }, 800);
         document.getElementById('registerForm').reset();
       } else {
         document.getElementById('regErrorMsg').innerText = data.error || 'Error al registrarse';

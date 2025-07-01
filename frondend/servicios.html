@@ -11,6 +11,10 @@
       font-family: 'Montserrat', sans-serif;
       background: linear-gradient(120deg, #e0eafc 0%, #cfdef3 100%);
       min-height: 100vh;
+      position: relative;
+    }
+    body::before {
+      content: none;
     }
     .navbar {
       display: flex;
@@ -184,9 +188,68 @@
       from { opacity: 0; transform: translate(-50%, -50%) scale(0.7); }
       to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
     }
+    /* Loader styles: barra luminosa horizontal (no vertical) */
+    #transition-loader {
+      display: none;
+      position: fixed;
+      z-index: 10001;
+      inset: 0;
+      align-items: center;
+      justify-content: center;
+      background: rgba(10, 25, 49, 0.65);
+      backdrop-filter: blur(8px);
+      transition: opacity 0.5s;
+      /* Siempre centrado horizontal y vertical */
+      flex-direction: row; /* refuerzo explícito */
+    }
+    .bar-loader-outer {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 220px;
+      height: 40px;
+      position: relative;
+      flex-direction: row; /* refuerzo explícito */
+    }
+    .bar-loader-track {
+      width: 180px;
+      height: 12px;
+      border-radius: 8px;
+      background: #e0eafc44;
+      overflow: hidden;
+      position: relative;
+      box-shadow: 0 2px 16px #00c6ff33;
+      /* Solo barra horizontal, sin orientación vertical */
+    }
+    .bar-loader-bar {
+      width: 60px;
+      height: 100%;
+      border-radius: 8px;
+      background: linear-gradient(90deg,#00c6ff 40%,#7ee8fa 100%);
+      box-shadow: 0 0 24px #00c6ff99, 0 0 32px #7ee8fa55;
+      position: absolute;
+      left: -60px;
+      top: 0;
+      animation: bar-slide 1.2s cubic-bezier(.7,0,.3,1) infinite;
+    }
+    @keyframes bar-slide {
+      0% { left: -60px; opacity: 0.2; }
+      10% { opacity: 1; }
+      50% { left: 120px; opacity: 1; }
+      90% { opacity: 1; }
+      100% { left: 180px; opacity: 0.2; }
+    }
   </style>
 </head>
 <body>
+  <!-- Loader de transición: barra luminosa uniforme -->
+  <div id="transition-loader" style="display:none;position:fixed;z-index:10001;inset:0;align-items:center;justify-content:center;background:rgba(10,25,49,0.65);backdrop-filter:blur(8px);transition:opacity 0.5s;">
+    <div class="bar-loader-outer">
+      <div class="bar-loader-track">
+        <div class="bar-loader-bar"></div>
+      </div>
+    </div>
+  </div>
   <nav class="navbar">
     <div class="logo">PENSALA</div>
     <div class="nav-links">
@@ -331,6 +394,23 @@
         }
       }, 400);
     }
+    // Loader de transición al entrar desde login (barra luminosa)
+    window.addEventListener('DOMContentLoaded', function() {
+      if (localStorage.getItem('showTransitionLoader') === '1') {
+        const loader = document.getElementById('transition-loader');
+        loader.style.display = 'flex';
+        loader.style.opacity = '1';
+        document.body.style.overflow = 'hidden';
+        setTimeout(() => {
+          loader.style.opacity = '0';
+          setTimeout(() => {
+            loader.style.display = 'none';
+            document.body.style.overflow = '';
+          }, 600);
+        }, 1200);
+        localStorage.removeItem('showTransitionLoader');
+      }
+    });
   </script>
 </body>
 </html>
