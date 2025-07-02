@@ -125,7 +125,12 @@ app.get('/api/carrito', auth, async (req, res) => {
     // Obtener los servicios del carrito ordenados, incluyendo el id de carrito_servicios
     const [items] = await conn.execute(`SELECT cs.id, s.nombre, cs.cantidad, s.precio FROM carrito_servicios cs JOIN servicios s ON cs.servicio_id = s.id WHERE cs.carrito_id = ?`, [carritoId]);
     await conn.end();
-    res.json(items);
+    // Parche de encoding para nombre (igual que en /api/servicios)
+    const itemsUtf8 = items.map(item => ({
+      ...item,
+      nombre: Buffer.from(item.nombre, 'binary').toString('utf8')
+    }));
+    res.json(itemsUtf8);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

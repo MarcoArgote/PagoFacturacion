@@ -26,6 +26,7 @@ if ($detalles) {
         echo "<div style='color:red;font-family:sans-serif;margin:2em auto;text-align:center;'>No hay detalles de servicios para esta factura.</div>";
         exit;
     }
+    header('Content-Type: text/html; charset=utf-8'); // Asegura encoding correcto en HTML
     echo "<html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1.0'>\n";
     echo "<title>Factura #$id</title>\n";
     echo "<link href='https://fonts.googleapis.com/css?family=Montserrat:400,700&display=swap' rel='stylesheet'>\n";
@@ -57,7 +58,9 @@ if ($detalles) {
     foreach ($servicios as $s) {
         $t = $s['cantidad'] * $s['precio_unitario'];
         $total += $t;
-        echo "<tr><td>".htmlspecialchars($s['nombre'])."</td><td>{$s['cantidad']}</td><td>Bs ".number_format($s['precio_unitario'],2)."</td><td>Bs ".number_format($t,2)."</td></tr>";
+        // Forzar nombre a UTF-8 para evitar bug de encoding
+        $nombre_utf8 = mb_convert_encoding($s['nombre'], 'UTF-8', 'auto');
+        echo "<tr><td>".htmlspecialchars($nombre_utf8)."</td><td>{$s['cantidad']}</td><td>Bs ".number_format($s['precio_unitario'],2)."</td><td>Bs ".number_format($t,2)."</td></tr>";
     }
     echo "<tr class='total-row'><th colspan='3'>Total</th><th>Bs " . number_format($total,2) . "</th></tr></table>";
     echo "<a href='factura.php?id=$id' class='btn-descargar'>Descargar PDF</a>";
@@ -65,6 +68,7 @@ if ($detalles) {
     exit;
 }
 // Generar PDF real con FPDF
+if (ob_get_level()) { ob_end_clean(); } // Limpia y cierra cualquier buffer activo
 header('Content-Type: application/pdf');
 header('Content-Disposition: attachment; filename="factura_'.$id.'.pdf"');
 $pdf = new FPDF();
